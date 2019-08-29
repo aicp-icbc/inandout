@@ -1,6 +1,7 @@
 package com.aicp.icbc.inandout.domain;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -57,17 +58,25 @@ public class ReadAndWriteFaqExcel {
                 String suggestAnswer = data.getString("suggest_answer");
 
                  // 获取推荐问
-                String resp2 = get(cellValue);
+                String resp2 = get(cellValue, token, host);
                 JSONObject data2 = (JSONObject) JSON.parseObject(resp2).get("data");
-                JSONArray question = data2.getJSONArray("question");
+                JSONArray question = new JSONArray();
+                question = data2.getJSONArray("question");
                 int serial = 0;
                 String sqs = "";
-                if (!question.isEmpty()) {
+//                if (!question.isEmpty()) {
+                if (question != null && question.size() > 0) {
                     for (Object o : question) {
-                        serial++;
-                        sqs += serial + "："+((JSONObject)o).getString("question")+"；";
+                        try {
+                            serial++;
+                            sqs += serial + "："+((JSONObject)o).getString("question")+"；";
+                        }catch (Exception e){
+                            e.printStackTrace();
+                            System.out.println("question --------->" + question);
+                        }
                     }
                 }
+                //Excel表设值
                 Cell newCell = currentRow.createCell(2);
                 newCell.setCellValue(suggestAnswer+" && "+sqs);
                 if ("".equals(suggestAnswer) || suggestAnswer == null) {
@@ -85,7 +94,7 @@ public class ReadAndWriteFaqExcel {
             fr.close();
             buff.close();
         } catch (Exception e) {
-            System.out.println("找不到 faqin.xls 或 faqin.xls 文件 或者 faqtoken.txt文件");
+            System.out.println("找不到 faqin.xls 或 faqout.xls 文件 或者 faqtoken.txt文件");
             e.printStackTrace();
         }
     }
@@ -122,7 +131,7 @@ public class ReadAndWriteFaqExcel {
         return str;
     }
     
-    public static String get(String question) {
+    public static String get(String question,String token, String host ) {
         String url = host + "/api/v1/qas/standard_suggestion?version=20171010&question="+question+"&ps=5";
         Request request = new Request.Builder().url(url)
                 .addHeader("Authorization", "AICP "+ token)
@@ -137,7 +146,7 @@ public class ReadAndWriteFaqExcel {
         String str = "";
         try {
             str = response.body().string();
-            System.out.println(str);
+//            System.out.println(str);
         } catch (IOException e) {
             e.printStackTrace();
         }
