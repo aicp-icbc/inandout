@@ -28,7 +28,7 @@ public class ReadAndWriteFaqExcel {
             is = new FileInputStream("faqin.xls");
             HSSFWorkbook workbook = new HSSFWorkbook(is);
             HSSFSheet sheet = workbook.getSheetAt(0);
-            sheet.setColumnWidth(2, 50 * 256);
+            sheet.setColumnWidth(2, 200 * 256);
             Row firstRow = sheet.getRow(0);
             Cell firstCell = firstRow.createCell(2);
             CellStyle style = workbook.createCellStyle();
@@ -56,13 +56,25 @@ public class ReadAndWriteFaqExcel {
                 JSONObject data = (JSONObject) json.get("data");
                 String suggestAnswer = data.getString("suggest_answer");
 
+                 // 获取推荐问
+                String resp2 = get(cellValue);
+                JSONObject data2 = (JSONObject) JSON.parseObject(resp2).get("data");
+                JSONArray question = data2.getJSONArray("question");
+                int serial = 0;
+                String sqs = "";
+                if (!question.isEmpty()) {
+                    for (Object o : question) {
+                        serial++;
+                        sqs += serial + "："+((JSONObject)o).getString("question")+"；";
+                    }
+                }
                 Cell newCell = currentRow.createCell(2);
-                newCell.setCellValue(suggestAnswer);
+                newCell.setCellValue(suggestAnswer+" && "+sqs);
                 if ("".equals(suggestAnswer) || suggestAnswer == null) {
                     JSONObject clarifyQuestions = (JSONObject) data.get("clarify_questions");
                     JSONObject voice = (JSONObject) clarifyQuestions.get("voice");
                     String content = voice.getString("content");
-                    newCell.setCellValue(content);
+                    newCell.setCellValue(content+" && "+sqs);
                 }
             }
             System.out.println("导出faq测试结果");
@@ -109,4 +121,27 @@ public class ReadAndWriteFaqExcel {
         }
         return str;
     }
+    
+    public static String get(String question) {
+        String url = host + "/api/v1/qas/standard_suggestion?version=20171010&question="+question+"&ps=5";
+        Request request = new Request.Builder().url(url)
+                .addHeader("Authorization", "AICP "+ token)
+                .get().build();
+        OkHttpClient okHttpClient = new OkHttpClient();
+        Response response = null;
+        try {
+            response = okHttpClient.newCall(request).execute();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String str = "";
+        try {
+            str = response.body().string();
+            System.out.println(str);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return str;
+    }
+
 }
