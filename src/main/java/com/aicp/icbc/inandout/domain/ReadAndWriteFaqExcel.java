@@ -56,25 +56,25 @@ public class ReadAndWriteFaqExcel {
                 JSONObject data = (JSONObject) json.get("data");
                 String suggestAnswer = data.getString("suggest_answer");
 
-                 // 获取推荐问
-                String resp2 = get(cellValue);
-                JSONObject data2 = (JSONObject) JSON.parseObject(resp2).get("data");
-                JSONArray question = data2.getJSONArray("question");
-                int serial = 0;
-                String sqs = "";
-                if (!question.isEmpty()) {
-                    for (Object o : question) {
-                        serial++;
-                        sqs += serial + "："+((JSONObject)o).getString("question")+"；";
+                String sqs = " && ";
+                if (data.containsKey("suggest_questions")) {
+
+                    JSONArray questions = data.getJSONArray("suggest_questions");
+                    int serial = 0;
+                    if (!questions.isEmpty()) {
+                        for (Object o : questions) {
+                            serial++;
+                            sqs += serial + "："+((JSONObject)o).getString("question")+"；";
+                        }
                     }
                 }
                 Cell newCell = currentRow.createCell(2);
-                newCell.setCellValue(suggestAnswer+" && "+sqs);
+                newCell.setCellValue(suggestAnswer+sqs);
                 if ("".equals(suggestAnswer) || suggestAnswer == null) {
                     JSONObject clarifyQuestions = (JSONObject) data.get("clarify_questions");
                     JSONObject voice = (JSONObject) clarifyQuestions.get("voice");
                     String content = voice.getString("content");
-                    newCell.setCellValue(content+" && "+sqs);
+                    newCell.setCellValue(content+sqs);
                 }
             }
             System.out.println("导出faq测试结果");
