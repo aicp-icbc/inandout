@@ -58,13 +58,14 @@ public class ReadAndWriteFaqExcel {
                 String suggestAnswer = data.getString("suggest_answer");
 
                  // 获取推荐问
-                String resp2 = get(cellValue, token, host);
+                String resp2 = get(cellValue, token,host);
                 JSONObject data2 = (JSONObject) JSON.parseObject(resp2).get("data");
                 JSONArray question = new JSONArray();
                 question = data2.getJSONArray("question");
+
                 int serial = 0;
                 String sqs = "";
-//                if (!question.isEmpty()) {
+                // if (!question.isEmpty()) {
                 if (question != null && question.size() > 0) {
                     for (Object o : question) {
                         try {
@@ -76,7 +77,6 @@ public class ReadAndWriteFaqExcel {
                         }
                     }
                 }
-                //Excel表设值
                 Cell newCell = currentRow.createCell(2);
                 newCell.setCellValue(suggestAnswer+" && "+sqs);
                 if ("".equals(suggestAnswer) || suggestAnswer == null) {
@@ -131,7 +131,7 @@ public class ReadAndWriteFaqExcel {
         return str;
     }
     
-    public static String get(String question,String token, String host ) {
+    public static String get(String question, String token, String host) {
         String url = host + "/api/v1/qas/standard_suggestion?version=20171010&question="+question+"&ps=5";
         Request request = new Request.Builder().url(url)
                 .addHeader("Authorization", "AICP "+ token)
