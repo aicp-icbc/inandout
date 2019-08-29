@@ -57,7 +57,7 @@ public class ReadAndWriteFaqExcel {
                 String suggestAnswer = data.getString("suggest_answer");
 
                  // 获取推荐问
-                String resp2 = get(cellValue);
+                String resp2 = get(cellValue, token, host);
                 JSONObject data2 = (JSONObject) JSON.parseObject(resp2).get("data");
                 JSONArray question = data2.getJSONArray("question");
                 int serial = 0;
@@ -122,7 +122,7 @@ public class ReadAndWriteFaqExcel {
         return str;
     }
     
-    public static String get(String question) {
+    public static String get(String question,String token,String host) {
         String url = host + "/api/v1/qas/standard_suggestion?version=20171010&question="+question+"&ps=5";
         Request request = new Request.Builder().url(url)
                 .addHeader("Authorization", "AICP "+ token)
