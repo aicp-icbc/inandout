@@ -12,7 +12,7 @@ import lombok.Data;
 @Data
 public class OutDto{
     @ExcelProperty(value = "序号" , index = 0)
-    private String serialNum;
+    private Integer serialNum;
 
     @ExcelProperty(value = "问题" , index = 1)
     private String faqQuestion;

@@ -11,7 +11,7 @@ import lombok.Data;
  */
 @Data
 public class InDto {
-    private String serialNum;
+    private Integer serialNum;
 
     private String faqQuestion;
 }
