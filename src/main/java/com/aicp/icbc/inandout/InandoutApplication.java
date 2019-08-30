@@ -5,8 +5,10 @@ import com.aicp.icbc.inandout.domain.ReadAndWriteFaqExcel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 
+@EnableCaching  //开启缓存
 @SpringBootApplication
 public class InandoutApplication {
 

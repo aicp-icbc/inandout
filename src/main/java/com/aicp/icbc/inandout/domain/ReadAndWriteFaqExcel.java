@@ -1,15 +1,22 @@
 package com.aicp.icbc.inandout.domain;
 
+import com.aicp.icbc.inandout.dto.InDto;
+import com.aicp.icbc.inandout.dto.OutDto;
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelReader;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.context.AnalysisContext;
+import com.alibaba.excel.event.AnalysisEventListener;
+import com.alibaba.excel.read.metadata.ReadSheet;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.*;
+import org.springframework.beans.BeanUtils;
 
 import java.io.*;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,37 +33,35 @@ public class ReadAndWriteFaqExcel {
         try {
             //输入文件路径-数据源
             System.out.println("导入faq测试集");
-            is = new FileInputStream("faqin.xls");
-            HSSFWorkbook workbook = new HSSFWorkbook(is);
-            HSSFSheet sheet = workbook.getSheetAt(0);
-            sheet.setColumnWidth(2, 200 * 256);
-            Row firstRow = sheet.getRow(0);
-            Cell firstCell = firstRow.createCell(2);
-            CellStyle style = workbook.createCellStyle();
-            style.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
-            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            firstCell.setCellStyle(style);
-            firstCell.setCellValue("答案");
-
+            String inFileName = "faqin.xlsx";
+            //获取Excel中的数据
+            List<InDto> inList = getAllDtoList(inFileName);
+            //写出到Excel中的数据
+            List<OutDto> outList = new ArrayList<>();
+            String outFileName = "faqout.xlsx";
             //获取token
-            FileReader fr = new FileReader("faqtoken.txt");
+            String tokenFileName = "faqtoken.txt";
+            FileReader fr = new FileReader(tokenFileName);
             BufferedReader buff = new BufferedReader(fr);
             List<String> list = buff.lines().collect(Collectors.toList());
             String host = list.get(0);
             String token = list.get(1);
 
+
+
             //循环请求
-            for (int row = 1; row < sheet.getLastRowNum()+1; row++) {
-                Row currentRow = sheet.getRow(row);
-                Cell cell = currentRow.getCell(1);
-                cell.setCellType(CellType.STRING);
-                String cellValue = cell.getStringCellValue();
-//                System.out.println(cellValue);
+            for (int row = 0; row < inList.size(); row++) {
+                //读取每一行
+                String cellValue = inList.get(row).getFaqQuestion();
+                // System.out.println(cellValue);
+
+                //对每一行进行请求
                 String resp = post(cellValue, token, host);
                 JSONObject json = JSON.parseObject(resp);
                 JSONObject data = (JSONObject) json.get("data");
                 String suggestAnswer = data.getString("suggest_answer");
 
+                //判断是否匹配到了推荐问题
                 String sqs = "";
                 if (data.containsKey("suggest_questions")) {
                     sqs = " \n推荐问题： ";
@@ -69,24 +74,29 @@ public class ReadAndWriteFaqExcel {
                         }
                     }
                 }
-                Cell newCell = currentRow.createCell(2);
-                newCell.setCellValue(suggestAnswer+sqs);
+
+                OutDto outDto = new OutDto();
+                BeanUtils.copyProperties(inList.get(row), outDto);
+
+                //判断是否命中--修改suggestAnswer返回值
                 if ("".equals(suggestAnswer) || suggestAnswer == null) {
                     JSONObject clarifyQuestions = (JSONObject) data.get("clarify_questions");
                     JSONObject voice = (JSONObject) clarifyQuestions.get("voice");
                     String content = voice.getString("content");
-                    newCell.setCellValue(content+sqs);
+                    suggestAnswer = content;
+                }
+                outDto.setFaqAnswer(suggestAnswer+sqs);
+                outList.add(outDto);
+                //每1000条写一次
+                if(row == inList.size()-1 || outList.size() == 1000){
+                    Integer insertNum = insertDtoList(outList, outFileName);
+                    System.out.println("本次写入 " + insertNum +  "条数据");
+                    inList.clear();
                 }
             }
-            System.out.println("导出faq测试结果");
-            //输入文件路径
-            FileOutputStream fos = new FileOutputStream("faqout.xls");
-            workbook.write(fos);
-            fos.close();
-            fr.close();
-            buff.close();
+
         } catch (Exception e) {
-            System.out.println("找不到 faqin.xls 或 faqout.xls 文件 或者 faqtoken.txt文件");
+            System.out.println("找不到 所需 文件");
             e.printStackTrace();
         }
     }
@@ -143,6 +153,56 @@ public class ReadAndWriteFaqExcel {
             e.printStackTrace();
         }
         return str;
+    }
+
+    /**
+     * 获取所有Excel中所有的list
+     * @return
+     */
+    public static List<InDto> getAllDtoList(String fileName) {
+        List<InDto> infoDtoList = new ArrayList<>();
+        //调用easyexcel 访问数据
+        //初始化监听器
+        AnalysisEventListener<InDto> listener = new AnalysisEventListener<InDto>() {
+            //访问，每一行数据
+            @Override
+            public void invoke(InDto object, AnalysisContext context) {
+                // System.err.println("Row:" + context.getCurrentRowNum() + "  Data:" + object);
+                infoDtoList.add(object);
+            }
+            //完成访问所有数据
+            @Override
+            public void doAfterAllAnalysed(AnalysisContext context) {
+                System.out.println(fileName + "数据读取完毕..." + "共读取：" + infoDtoList.size() + "条数据");
+
+            }
+        };
+        //生成ExcelReader
+        ExcelReader excelReader = EasyExcel.read(fileName, InDto.class, listener).build();;
+        // 第一个参数表示sheet页，从0开始，第二个设值表头行数，默认从1开始
+        ReadSheet readSheet = EasyExcel.readSheet(0).headRowNumber(1).build();
+        excelReader.read(readSheet);
+        // 这里千万别忘记关闭，读的时候会创建临时文件，到时磁盘会崩的
+        excelReader.finish();
+        return infoDtoList;
+    }
+
+
+    /**
+     * 写入DTOlist
+     * @param dtoList
+     * @return
+     */
+    public static Integer insertDtoList(List<OutDto> dtoList, String fileName){
+        //调用easyexcel 写入数据
+        ExcelWriter excelWriter = EasyExcel.write(fileName, OutDto.class).build();
+        //设值名称
+        WriteSheet writeSheet = EasyExcel.writerSheet("FAQ测试").build();
+        //开始写入
+        excelWriter.write(dtoList, writeSheet);
+        /// 千万别忘记finish 会帮忙关闭流
+        excelWriter.finish();
+        return dtoList.size();
     }
 
 }
