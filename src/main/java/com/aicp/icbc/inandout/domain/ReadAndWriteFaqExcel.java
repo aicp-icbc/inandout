@@ -173,7 +173,9 @@ public class ReadAndWriteFaqExcel {
             @Override
             public void invoke(InDto object, AnalysisContext context) {
                 // System.err.println("Row:" + context.getCurrentRowNum() + "  Data:" + object);
-                infoDtoList.add(object);
+                if(object!=null && object.getSerialNum()!=null && object.getFaqQuestion() != null){
+                    infoDtoList.add(object);
+                }
             }
             //完成访问所有数据
             @Override
