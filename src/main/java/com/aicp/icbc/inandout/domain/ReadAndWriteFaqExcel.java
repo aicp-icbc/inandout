@@ -32,7 +32,6 @@ public class ReadAndWriteFaqExcel {
         InputStream is;
         try {
             //输入文件路径-数据源
-            System.out.println("导入faq测试集");
             String inFileName = "faqin.xlsx";
             //获取Excel中的数据
             List<InDto> inList = getAllDtoList(inFileName);
@@ -54,7 +53,6 @@ public class ReadAndWriteFaqExcel {
                 //读取每一行
                 String cellValue = inList.get(row).getFaqQuestion();
                 // System.out.println(cellValue);
-
                 //对每一行进行请求
                 String resp = post(cellValue, token, host);
                 JSONObject json = JSON.parseObject(resp);
@@ -87,15 +85,23 @@ public class ReadAndWriteFaqExcel {
                 }
                 outDto.setFaqAnswer(suggestAnswer+sqs);
                 outList.add(outDto);
+
+                //打印进度条
+                String tu = "*";
+                Integer scheduleNum = (new Double(((row*1.0) / (inList.size())) * 100).intValue());
+                for (Integer j = 0 ; j < scheduleNum/10; j += 1) {
+                    tu += "*";
+                }
+                System.out.print("\r接口访问进度：" + scheduleNum  + "%\t" + tu + "\t" + (row) + "/" + inList.size());
             }
 
             //写出Excel
+            System.out.println("开始导出Excel");
             Integer insertNum = insertDtoList(outList, outFileName);
-            System.out.println("本次写入 " + insertNum +  "条数据");
             inList.clear();
 
         } catch (Exception e) {
-            System.out.println("找不到 所需 文件");
+            System.out.println("找不到所需文件");
             e.printStackTrace();
         }
     }
@@ -172,8 +178,7 @@ public class ReadAndWriteFaqExcel {
             //完成访问所有数据
             @Override
             public void doAfterAllAnalysed(AnalysisContext context) {
-                System.out.println(fileName + "数据读取完毕..." + "共读取：" + infoDtoList.size() + "条数据");
-
+                //System.out.println(fileName + " 数据读取完毕，共读取： " + infoDtoList.size() + " 条数据");
             }
         };
         //生成ExcelReader

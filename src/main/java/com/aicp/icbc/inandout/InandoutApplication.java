@@ -16,14 +16,14 @@ public class InandoutApplication {
     public static void main(String[] args) {
         SpringApplication.run(InandoutApplication.class, args);
         if("F".equals(args[0].toUpperCase())){
-            System.out.println("开-------FAQ测试--------始");
+            System.out.println("开--------------FAQ测试---------------始");
             ReadAndWriteFaqExcel.run(args);
-            System.out.println("完-------FAQ测试--------成");
+            System.out.println("完--------------FAQ测试---------------成");
         }
         if("T".equals(args[0].toUpperCase())){
-            System.out.println("开-------机器人训练导入--------始");
+            System.out.println("开--------------机器人训练导入---------------始");
             InputTreating.run(args);
-            System.out.println("完-------机器人训练导入--------成");
+            System.out.println("完--------------机器人训练导入---------------成");
         }
     }
 
