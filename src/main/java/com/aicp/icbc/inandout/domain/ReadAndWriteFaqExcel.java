@@ -87,13 +87,12 @@ public class ReadAndWriteFaqExcel {
                 }
                 outDto.setFaqAnswer(suggestAnswer+sqs);
                 outList.add(outDto);
-                //每1000条写一次
-                if(row == inList.size()-1 || outList.size() == 1000){
-                    Integer insertNum = insertDtoList(outList, outFileName);
-                    System.out.println("本次写入 " + insertNum +  "条数据");
-                    inList.clear();
-                }
             }
+
+            //写出Excel
+            Integer insertNum = insertDtoList(outList, outFileName);
+            System.out.println("本次写入 " + insertNum +  "条数据");
+            inList.clear();
 
         } catch (Exception e) {
             System.out.println("找不到 所需 文件");

@@ -1,5 +1,6 @@
 package com.aicp.icbc.inandout;
 
+
 import com.aicp.icbc.inandout.domain.InputTreating;
 import com.aicp.icbc.inandout.domain.ReadAndWriteFaqExcel;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,14 +16,14 @@ public class InandoutApplication {
     public static void main(String[] args) {
         SpringApplication.run(InandoutApplication.class, args);
         if("F".equals(args[0].toUpperCase())){
-            System.out.println("开始进行Faq测试");
+            System.out.println("开-------FAQ测试--------始");
             ReadAndWriteFaqExcel.run(args);
-            System.out.println("Faq测试完成");
+            System.out.println("完-------FAQ测试--------成");
         }
         if("T".equals(args[0].toUpperCase())){
-            System.out.println("开始导入机器人训练集合");
+            System.out.println("开-------机器人训练导入--------始");
             InputTreating.run(args);
-            System.out.println("机器人训练集合导入完成");
+            System.out.println("完-------机器人训练导入--------成");
         }
     }
 
