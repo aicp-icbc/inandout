@@ -1,3 +1,4 @@
 logging:
   level:
-    .*: error
+    org.*: error
+    com.*: error
