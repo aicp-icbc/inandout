@@ -73,7 +73,6 @@ public class ReadAndWriteFaqExcel {
                             }
                         }
                     }
-
                     OutDto outDto = new OutDto();
                     BeanUtils.copyProperties(inList.get(row), outDto);
 
@@ -89,24 +88,27 @@ public class ReadAndWriteFaqExcel {
 
                     //打印进度条
                     String tu = "*";
-                    Integer scheduleNum = (new Double(((row*1.0) / (inList.size())) * 100).intValue());
+                    Integer rowNum = row + 1;
+                    Integer scheduleNum = (new Double(((outList.size()*1.0) / (inList.size())) * 100).intValue());
                     for (Integer j = 0 ; j < scheduleNum/10; j += 1) {
                         tu += "*";
                     }
-                    System.out.print("\r接口访问进度：" + scheduleNum  + "%\t" + tu + "\t" + (row) + "/" + inList.size());
+                    if(rowNum == inList.size()){
+                        System.out.print("\r接口访问进度：" + 100  + "%\t" + tu + "\t" + inList.size() + "/" + inList.size());
+                    }else {
+                        System.out.print("\r接口访问进度：" + scheduleNum  + "%\t" + tu + "\t" + outList.size() + "/" + inList.size());
+                    }
                 }catch (Exception e){
 
                 }
             }
-
+            inList.clear();
             //写出Excel
             System.out.println("开始导出Excel");
             Integer insertNum = insertDtoList(outList, outFileName);
-            inList.clear();
 
         } catch (Exception e) {
             System.out.println("找不到所需文件");
-            e.printStackTrace();
         }
     }
 
@@ -129,15 +131,13 @@ public class ReadAndWriteFaqExcel {
         Response response = null;
         try {
             response = client.newCall(request).execute();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
         }
         String str = "";
         try {
             str = response.body().string();
 //            System.out.println(str);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
         }
         return str;
     }
@@ -151,15 +151,13 @@ public class ReadAndWriteFaqExcel {
         Response response = null;
         try {
             response = okHttpClient.newCall(request).execute();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
         }
         String str = "";
         try {
             str = response.body().string();
 //            System.out.println(str);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
         }
         return str;
     }
