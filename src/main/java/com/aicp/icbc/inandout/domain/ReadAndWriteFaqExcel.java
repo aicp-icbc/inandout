@@ -51,48 +51,52 @@ public class ReadAndWriteFaqExcel {
             //循环请求
             for (int row = 0; row < inList.size(); row++) {
                 //读取每一行
-                String cellValue = inList.get(row).getFaqQuestion();
-                // System.out.println(cellValue);
-                //对每一行进行请求
-                String resp = post(cellValue, token, host);
-                JSONObject json = JSON.parseObject(resp);
-                JSONObject data = (JSONObject) json.get("data");
-                String suggestAnswer = data.getString("suggest_answer");
+                try {
+                    String cellValue = inList.get(row).getFaqQuestion();
+                    // System.out.println(cellValue);
+                    //对每一行进行请求
+                    String resp = post(cellValue, token, host);
+                    JSONObject json = JSON.parseObject(resp);
+                    JSONObject data = (JSONObject) json.get("data");
+                    String suggestAnswer = data.getString("suggest_answer");
 
-                //判断是否匹配到了推荐问题
-                String sqs = "";
-                if (data.containsKey("suggest_questions")) {
-                    sqs = " \n推荐问题： ";
-                    JSONArray questions = data.getJSONArray("suggest_questions");
-                    int serial = 0;
-                    if (!questions.isEmpty()) {
-                        for (Object o : questions) {
-                            serial++;
-                            sqs += serial + "："+((JSONObject)o).getString("question")+"；";
+                    //判断是否匹配到了推荐问题
+                    String sqs = "";
+                    if (data.containsKey("suggest_questions")) {
+                        sqs = " \n推荐问题： ";
+                        JSONArray questions = data.getJSONArray("suggest_questions");
+                        int serial = 0;
+                        if (!questions.isEmpty()) {
+                            for (Object o : questions) {
+                                serial++;
+                                sqs += serial + "："+((JSONObject)o).getString("question")+"；";
+                            }
                         }
                     }
-                }
 
-                OutDto outDto = new OutDto();
-                BeanUtils.copyProperties(inList.get(row), outDto);
+                    OutDto outDto = new OutDto();
+                    BeanUtils.copyProperties(inList.get(row), outDto);
 
-                //判断是否命中--修改suggestAnswer返回值
-                if ("".equals(suggestAnswer) || suggestAnswer == null) {
-                    JSONObject clarifyQuestions = (JSONObject) data.get("clarify_questions");
-                    JSONObject voice = (JSONObject) clarifyQuestions.get("voice");
-                    String content = voice.getString("content");
-                    suggestAnswer = content;
-                }
-                outDto.setFaqAnswer(suggestAnswer+sqs);
-                outList.add(outDto);
+                    //判断是否命中--修改suggestAnswer返回值
+                    if ("".equals(suggestAnswer) || suggestAnswer == null) {
+                        JSONObject clarifyQuestions = (JSONObject) data.get("clarify_questions");
+                        JSONObject voice = (JSONObject) clarifyQuestions.get("voice");
+                        String content = voice.getString("content");
+                        suggestAnswer = content;
+                    }
+                    outDto.setFaqAnswer(suggestAnswer+sqs);
+                    outList.add(outDto);
 
-                //打印进度条
-                String tu = "*";
-                Integer scheduleNum = (new Double(((row*1.0) / (inList.size())) * 100).intValue());
-                for (Integer j = 0 ; j < scheduleNum/10; j += 1) {
-                    tu += "*";
+                    //打印进度条
+                    String tu = "*";
+                    Integer scheduleNum = (new Double(((row*1.0) / (inList.size())) * 100).intValue());
+                    for (Integer j = 0 ; j < scheduleNum/10; j += 1) {
+                        tu += "*";
+                    }
+                    System.out.print("\r接口访问进度：" + scheduleNum  + "%\t" + tu + "\t" + (row) + "/" + inList.size());
+                }catch (Exception e){
+
                 }
-                System.out.print("\r接口访问进度：" + scheduleNum  + "%\t" + tu + "\t" + (row) + "/" + inList.size());
             }
 
             //写出Excel
