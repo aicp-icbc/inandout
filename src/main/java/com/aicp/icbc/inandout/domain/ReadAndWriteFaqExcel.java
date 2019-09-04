@@ -152,7 +152,7 @@ public class ReadAndWriteFaqExcel {
             }
             inList.clear();
             //写出Excel
-            System.out.println("开始导出Excel");
+            System.out.println("/n开始导出Excel");
             Integer insertNum = insertDtoList(outList, outFileName);
 
         } catch (Exception e) {
