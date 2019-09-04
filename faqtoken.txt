@@ -1,0 +1,6 @@
+https://api-aicp.baidu.com
+f9b88732-a7c5-44ab-a907-6075ad39d5f8
+780bf47e-e9bf-433f-8711-60efe9bef02e
+dfcd5295-8c3a-4613-bba7-fc709c30d686
+#第一行配ip地址  只到域名
+#第二行配token 目标Agent的 Developer Token

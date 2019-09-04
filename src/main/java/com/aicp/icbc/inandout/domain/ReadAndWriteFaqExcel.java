@@ -1,5 +1,7 @@
 package com.aicp.icbc.inandout.domain;
 
+import com.aicp.icbc.inandout.dao.FaqLibraryDao;
+import com.aicp.icbc.inandout.dto.FaqLibraryDto;
 import com.aicp.icbc.inandout.dto.InDto;
 import com.aicp.icbc.inandout.dto.OutDto;
 import com.alibaba.excel.EasyExcel;
@@ -14,9 +16,13 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ApplicationContext;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +34,10 @@ import java.util.stream.Collectors;
  * @modified By liuxincheng01
  */
 public class ReadAndWriteFaqExcel {
-    public static void run(String[] args) {
+//    @Autowired
+//    private static FaqLibraryDao faqLibraryDao;
+
+    public static void run(String[] args,FaqLibraryDao faqLibraryDao) {
         InputStream is;
         try {
             //输入文件路径-数据源
@@ -46,8 +55,6 @@ public class ReadAndWriteFaqExcel {
             String host = list.get(0);
             String token = list.get(1);
 
-
-
             //循环请求
             for (int row = 0; row < inList.size(); row++) {
                 //读取每一行
@@ -59,6 +66,43 @@ public class ReadAndWriteFaqExcel {
                     JSONObject json = JSON.parseObject(resp);
                     JSONObject data = (JSONObject) json.get("data");
                     String suggestAnswer = data.getString("suggest_answer");
+                    //判断是否命中了标准问
+                    String standardQuestion = "未命中标准问题";
+                    String standardQuestionId = "";
+                    if(data.containsKey("answer") && data.get("answer") != null){
+                        JSONObject answer = (JSONObject) data.get("answer");
+                        if(answer.containsKey("standardQuestion") && answer.get("standardQuestion") != null){
+                            standardQuestion = (String) answer.get("standardQuestion");
+                            standardQuestionId = (String)answer.get("id");
+                        }
+                    }
+
+                    //根据命中的标准问 生成业务级别
+                    String businessLevel = "";
+                    if("未命中标准问题".equals(standardQuestion)){
+                        businessLevel = "该问题无法匹配到具体业务级别";
+                    }else if(!"".equals(standardQuestionId)){
+                        List<FaqLibraryDto> faqLibraryDtoList = new ArrayList<>();
+                        List<Integer> faqLibIds = new ArrayList<>();
+                        //在faq表中  根据标准问ID获取dir_id
+                        Integer id = faqLibraryDao.selectFaqDirIdByFaqId(standardQuestionId);
+                        faqLibIds.add(id);
+                        //由最下层dir_id 在 faq_library 表中 获取 parent_id，并保存每一层的id直到最顶层
+                        while (faqLibraryDao.selectParentIdById(id) != 0){
+                            id = faqLibraryDao.selectParentIdById(id);
+                            faqLibIds.add(id);
+                        }
+                        //反序list 在 faq_library 表 根据 id 获取 name，并追加至 业务级别字段中
+                        Collections.reverse(faqLibIds);
+                        for (Integer i = 0; i < faqLibIds.size(); i ++){
+                            if(i == 0){
+                                businessLevel += faqLibraryDao.selectNameById(faqLibIds.get(i));
+                            }else {
+                                businessLevel += "|" + faqLibraryDao.selectNameById(faqLibIds.get(i));
+                            }
+                        }
+                        System.out.println("\n"+faqLibIds + "\t"+ standardQuestion +"\t"+ businessLevel);
+                    }
 
                     //判断是否匹配到了推荐问题
                     String sqs = "";
@@ -73,8 +117,6 @@ public class ReadAndWriteFaqExcel {
                             }
                         }
                     }
-                    OutDto outDto = new OutDto();
-                    BeanUtils.copyProperties(inList.get(row), outDto);
 
                     //判断是否命中--修改suggestAnswer返回值
                     if ("".equals(suggestAnswer) || suggestAnswer == null) {
@@ -83,6 +125,12 @@ public class ReadAndWriteFaqExcel {
                         String content = voice.getString("content");
                         suggestAnswer = content;
                     }
+
+                    //对对象进行赋值
+                    OutDto outDto = new OutDto();
+                    BeanUtils.copyProperties(inList.get(row), outDto);
+                    outDto.setStandardQuestion(standardQuestion);
+                    outDto.setBusinessLevel(businessLevel);
                     outDto.setFaqAnswer(suggestAnswer+sqs);
                     outList.add(outDto);
 
@@ -99,7 +147,7 @@ public class ReadAndWriteFaqExcel {
                         System.out.print("\r接口访问进度：" + scheduleNum  + "%\t" + tu + "\t" + outList.size() + "/" + inList.size());
                     }
                 }catch (Exception e){
-
+                    e.printStackTrace();
                 }
             }
             inList.clear();
@@ -108,7 +156,7 @@ public class ReadAndWriteFaqExcel {
             Integer insertNum = insertDtoList(outList, outFileName);
 
         } catch (Exception e) {
-            System.out.println("找不到所需文件");
+            e.printStackTrace();
         }
     }
 
@@ -131,6 +179,27 @@ public class ReadAndWriteFaqExcel {
         Response response = null;
         try {
             response = client.newCall(request).execute();
+        } catch (Exception e) {
+        }
+        String str = "";
+        try {
+            str = response.body().string();
+//            System.out.println(str);
+        } catch (Exception e) {
+        }
+        return str;
+    }
+
+    //根据标准问获取业务级别列表
+    public static String getQas(String question, String token, String host) {
+        String url = host + "api/v1/qas/standard_suggestion?version=20171010&question="+question+"&ps=5";
+        Request request = new Request.Builder().url(url)
+                .addHeader("Authorization", "AICP "+ token)
+                .get().build();
+        OkHttpClient okHttpClient = new OkHttpClient();
+        Response response = null;
+        try {
+            response = okHttpClient.newCall(request).execute();
         } catch (Exception e) {
         }
         String str = "";

@@ -17,6 +17,12 @@ public class OutDto{
     @ExcelProperty(value = "问题" , index = 1)
     private String faqQuestion;
 
-    @ExcelProperty(value = "答案" , index = 2)
+    @ExcelProperty(value = "命中标准问" , index = 2)
+    private String standardQuestion;
+
+    @ExcelProperty(value = "答案" , index = 3)
     private String faqAnswer;
+
+    @ExcelProperty(value = "业务分类级别" , index = 4)
+    private String businessLevel;
 }
