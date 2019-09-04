@@ -26,15 +26,19 @@ public class Loading implements CommandLineRunner {
 //        System.out.println("程序启动模拟 ------ 准备读取接口数据");
 //        System.out.println(faqLibraryDao.selectNameById(6) + "-------" + args[0]);
 //        System.out.println("程序启动模拟 ------ 接口数据读取完毕");
-        if("F".equals(args[0].toUpperCase())){
-            System.out.println("开--------------FAQ测试---------------始");
+//        if("F".equals(args[0].toUpperCase())){
+//            System.out.println("开----------------------------------FAQ测试-----------------------------------始");
+//            ReadAndWriteFaqExcel.run(args,faqLibraryDao);
+//            System.out.println("完----------------------------------FAQ测试-----------------------------------成");
+//        }
+//        if("T".equals(args[0].toUpperCase())){
+//            System.out.println("开----------------------------------机器人训练导入-----------------------------------始");
+//            InputTreating.run(args);
+//            System.out.println("完----------------------------------机器人训练导入-----------------------------------成");
+//        }
+            System.out.println("开----------------------------------FAQ测试-----------------------------------始");
             ReadAndWriteFaqExcel.run(args,faqLibraryDao);
-            System.out.println("完--------------FAQ测试---------------成");
-        }
-        if("T".equals(args[0].toUpperCase())){
-            System.out.println("开--------------机器人训练导入---------------始");
-            InputTreating.run(args);
-            System.out.println("完--------------机器人训练导入---------------成");
-        }
+            Thread.sleep(1500);
+            System.out.println("完----------------------------------FAQ测试-----------------------------------成");
     }
 }

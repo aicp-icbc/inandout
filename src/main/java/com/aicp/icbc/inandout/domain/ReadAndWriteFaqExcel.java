@@ -101,7 +101,7 @@ public class ReadAndWriteFaqExcel {
                                 businessLevel += "|" + faqLibraryDao.selectNameById(faqLibIds.get(i));
                             }
                         }
-                        System.out.println("\n"+faqLibIds + "\t"+ standardQuestion +"\t"+ businessLevel);
+//                        System.out.println("\n"+faqLibIds + "\t"+ standardQuestion +"\t"+ businessLevel);
                     }
 
                     //判断是否匹配到了推荐问题
