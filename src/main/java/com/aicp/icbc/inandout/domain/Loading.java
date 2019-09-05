@@ -21,6 +21,8 @@ public class Loading implements CommandLineRunner {
     @Autowired
     private FaqLibraryDao faqLibraryDao;
 
+    @Autowired ReadAndWriteFaqExcel readAndWriteFaqExcel;
+
     @Override
     public void run(String... args) throws Exception {
 //        System.out.println("程序启动模拟 ------ 准备读取接口数据");
@@ -37,7 +39,7 @@ public class Loading implements CommandLineRunner {
 //            System.out.println("完----------------------------------机器人训练导入-----------------------------------成");
 //        }
             System.out.println("开----------------------------------FAQ测试-----------------------------------始");
-            ReadAndWriteFaqExcel.run(args,faqLibraryDao);
+            readAndWriteFaqExcel.run(args,faqLibraryDao);
             Thread.sleep(1500);
             System.out.println("完----------------------------------FAQ测试-----------------------------------成");
     }

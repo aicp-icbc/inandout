@@ -16,6 +16,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
 import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -30,11 +31,12 @@ import java.util.stream.Collectors;
  * @date：Created in 2019-08-24 15:04
  * @modified By liuxincheng01
  */
+@Component
 public class ReadAndWriteFaqExcel {
 //    @Autowired
 //    private static FaqLibraryDao faqLibraryDao;
 
-    public static void run(String[] args,FaqLibraryDao faqLibraryDao) {
+    public  void run(String[] args,FaqLibraryDao faqLibraryDao) {
         InputStream is;
         try {
             //输入文件路径-数据源
@@ -168,7 +170,7 @@ public class ReadAndWriteFaqExcel {
         }
     }
 
-    public static String post(String queryText,String token,String host){
+    public  String post(String queryText,String token,String host){
         String url = host + "/api/v1/core/query?version=20170407";
         OkHttpClient client = new OkHttpClient();
         HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
@@ -219,7 +221,7 @@ public class ReadAndWriteFaqExcel {
         return str;
     }
     
-    public static String get(String question, String token, String host) {
+    public  String get(String question, String token, String host) {
         String url = host + "/api/v1/qas/standard_suggestion?version=20171010&question="+question+"&ps=5";
         Request request = new Request.Builder().url(url)
                 .addHeader("Authorization", "AICP "+ token)
@@ -243,7 +245,7 @@ public class ReadAndWriteFaqExcel {
      * 获取所有Excel中所有的list
      * @return
      */
-    public static List<InDto> getAllDtoList(String fileName) {
+    public  List<InDto> getAllDtoList(String fileName) {
         List<InDto> infoDtoList = new ArrayList<>();
         //调用easyexcel 访问数据
         //初始化监听器
@@ -278,7 +280,7 @@ public class ReadAndWriteFaqExcel {
      * @param dtoList
      * @return
      */
-    public static List<OutDto> appendDtoList(List<OutDto> dtoList, Integer insize){
+    public  List<OutDto> appendDtoList(List<OutDto> dtoList, Integer insize){
         ArrayList<OutDto> dtoArrayList = new ArrayList<>();
         Integer missingNum = 0;
         Integer clarifyNum = 0;
