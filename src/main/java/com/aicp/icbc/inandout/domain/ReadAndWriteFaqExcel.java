@@ -41,12 +41,12 @@ public class ReadAndWriteFaqExcel {
         InputStream is;
         try {
             //输入文件路径-数据源
-            String inFileName = "faqin.xlsx";
+            String inFileName = "FAQ测试数据导入模板.xlsx";
             //获取Excel中的数据
             List<InDto> inList = getAllDtoList(inFileName);
             //写出到Excel中的数据
             List<OutDto> outList = new ArrayList<>();
-            String outFileName = "faqout.xlsx";
+            String outFileName = "FAQ测试结果.xlsx";
             //获取token
             String tokenFileName = "faqtoken.txt";
             FileReader fr = new FileReader(tokenFileName);
@@ -129,6 +129,7 @@ public class ReadAndWriteFaqExcel {
                     //对对象进行赋值
                     OutDto outDto = new OutDto();
                     BeanUtils.copyProperties(inList.get(row), outDto);
+                    outDto.setSerialNum(row + 1);
                     outDto.setStandardQuestion(standardQuestion);
                     outDto.setBusinessLevel(businessLevel);
                     outDto.setFaqAnswer(suggestAnswer+sqs);
@@ -150,12 +151,17 @@ public class ReadAndWriteFaqExcel {
                     e.printStackTrace();
                 }
             }
-            inList.clear();
             //写出Excel
-            System.out.println("/n开始导出Excel");
-            Integer insertNum = insertDtoList(outList, outFileName);
+            System.out.println("\t\t开始导出Excel");
+            List<OutDto> outPutList = appendDtoList(outList,inList.size());
+            Integer insertNum = insertDtoList(outPutList, outFileName);
+            outList.clear();
+            inList.clear();
+            outPutList.clear();
+        }catch (IOException e){
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -244,7 +250,7 @@ public class ReadAndWriteFaqExcel {
             @Override
             public void invoke(InDto object, AnalysisContext context) {
                 // System.err.println("Row:" + context.getCurrentRowNum() + "  Data:" + object);
-                if(object!=null && object.getSerialNum()!=null && object.getFaqQuestion() != null){
+                if(object!=null && object.getFaqQuestion() != null){
                     infoDtoList.add(object);
                 }
             }
@@ -264,6 +270,62 @@ public class ReadAndWriteFaqExcel {
         return infoDtoList;
     }
 
+
+    /**
+     * 计算召回率
+     * @param dtoList
+     * @return
+     */
+    public static List<OutDto> appendDtoList(List<OutDto> dtoList, Integer insize){
+        ArrayList<OutDto> dtoArrayList = new ArrayList<>();
+        Integer missingNum = 0;
+        Integer clarifyNum = 0;
+        Integer totalNum = dtoList.size();
+        Integer normalNum = 0;
+        for(OutDto perDto:dtoList){
+            if("未命中标准问题".equals(perDto.getStandardQuestion())){
+                if("抱歉,小智还在努力学习中。".equals(perDto.getFaqAnswer())){
+                    //未命中问题--非召回
+                    missingNum ++;
+                }else {
+                    //未命中问题--澄清
+                    clarifyNum ++;
+                }
+            }else {
+                normalNum ++;
+            }
+        }
+        OutDto outDto1 = new OutDto();
+//        outDto1.setSerialNum(totalNum + 1);
+        outDto1.setFaqQuestion("FAQ总数：");
+        outDto1.setStandardQuestion(insize.toString());
+        outDto1.setFaqAnswer("成功测试FAQ数：");
+        outDto1.setBusinessLevel(totalNum.toString());
+
+        OutDto outDto2 = new OutDto();
+//        outDto2.setSerialNum(totalNum + 2);
+        outDto2.setFaqQuestion("FAQ召回数：");
+        outDto2.setStandardQuestion(String.valueOf(totalNum - missingNum));
+        outDto2.setFaqAnswer("FAQ召回率：");
+        outDto2.setBusinessLevel(String.valueOf((totalNum - missingNum)*1.0 / totalNum));
+
+        OutDto outDto3 = new OutDto();
+//        outDto3.setSerialNum(totalNum + 3);
+        outDto3.setFaqQuestion( "FAQ澄清数：");
+        outDto3.setStandardQuestion(String.valueOf(clarifyNum));
+        outDto3.setFaqAnswer("FAQ澄清率：");
+        outDto3.setBusinessLevel(String.valueOf((clarifyNum * 1.0) / totalNum));
+
+        OutDto outDto4 = new OutDto();
+
+        dtoArrayList.add(outDto1);
+        dtoArrayList.add(outDto2);
+        dtoArrayList.add(outDto3);
+        dtoArrayList.add(outDto4);
+
+        dtoArrayList.addAll(dtoList);
+        return dtoArrayList;
+    }
 
     /**
      * 写入DTOlist

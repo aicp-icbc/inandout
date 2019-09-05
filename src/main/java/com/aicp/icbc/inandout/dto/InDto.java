@@ -1,6 +1,6 @@
 package com.aicp.icbc.inandout.dto;
 
-import com.alibaba.excel.metadata.BaseRowModel;
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
 /**
@@ -11,7 +11,9 @@ import lombok.Data;
  */
 @Data
 public class InDto {
+    @ExcelProperty(value = "序号" , index = 0)
     private Integer serialNum;
 
+    @ExcelProperty(value = "问题" , index = 1)
     private String faqQuestion;
 }
