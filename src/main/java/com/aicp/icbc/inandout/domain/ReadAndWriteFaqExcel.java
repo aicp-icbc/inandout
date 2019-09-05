@@ -16,9 +16,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ApplicationContext;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -139,9 +136,14 @@ public class ReadAndWriteFaqExcel {
                     String tu = "*";
                     Integer rowNum = row + 1;
                     Integer scheduleNum = (new Double(((outList.size()*1.0) / (inList.size())) * 100).intValue());
-                    for (Integer j = 0 ; j < scheduleNum/10; j += 1) {
-                        tu += "*";
+                    Integer j = 0;
+                    for (; j < scheduleNum/10; j += 1) {
+                        tu += "***";
                     }
+                    for (; j < 10; j += 1){
+                        tu += "---";
+                    }
+
                     if(rowNum == inList.size()){
                         System.out.print("\r接口访问进度：" + 100  + "%\t" + tu + "\t" + inList.size() + "/" + inList.size());
                     }else {

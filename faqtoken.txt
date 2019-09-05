@@ -1,4 +1,6 @@
-https://api-aicp.baidu.com
+http://122.26.157.231:8831
+2f1ad44a-1d2d-46f9-8c25-21e2d92ab573
+8f433577-ceef-4b6f-b2f2-4a97b97be3d2
 f9b88732-a7c5-44ab-a907-6075ad39d5f8
 780bf47e-e9bf-433f-8711-60efe9bef02e
 dfcd5295-8c3a-4613-bba7-fc709c30d686
