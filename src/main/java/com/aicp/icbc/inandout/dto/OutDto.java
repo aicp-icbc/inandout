@@ -20,9 +20,14 @@ public class OutDto{
     @ExcelProperty(value = "命中标准问" , index = 2)
     private String standardQuestion;
 
-    @ExcelProperty(value = "答案" , index = 3)
+    @ExcelProperty(value = "回复类型" , index = 3)
+    private String standardType;
+
+    @ExcelProperty(value = "答案" , index = 4)
     private String faqAnswer;
 
-    @ExcelProperty(value = "业务分类级别" , index = 4)
+    @ExcelProperty(value = "业务分类级别" , index = 5)
     private String businessLevel;
+
+
 }

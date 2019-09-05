@@ -53,6 +53,8 @@ public class ReadAndWriteFaqExcel {
             List<String> list = buff.lines().collect(Collectors.toList());
             String host = list.get(0);
             String token = list.get(1);
+            String missTalk = list.get(2);
+
 
             //循环请求
             for (int row = 0; row < inList.size(); row++) {
@@ -65,6 +67,9 @@ public class ReadAndWriteFaqExcel {
                     JSONObject json = JSON.parseObject(resp);
                     JSONObject data = (JSONObject) json.get("data");
                     String suggestAnswer = data.getString("suggest_answer");
+                    //回复类型
+                    String standardType = "";
+
                     //判断是否命中了标准问
                     String standardQuestion = "未命中标准问题";
                     String standardQuestionId = "";
@@ -132,6 +137,15 @@ public class ReadAndWriteFaqExcel {
                     outDto.setStandardQuestion(standardQuestion);
                     outDto.setBusinessLevel(businessLevel);
                     outDto.setFaqAnswer(suggestAnswer+sqs);
+                    //设置回复类型
+                    if(!"未命中标准问题".equals(outDto.getStandardQuestion())){
+                        standardType = "标准回复";
+                    }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && missTalk.equals(outDto.getStandardQuestion())){
+                        standardType = "默认回复";
+                    }else {
+                        standardType = "澄清";
+                    }
+
                     outList.add(outDto);
 
                     //打印进度条
@@ -157,7 +171,7 @@ public class ReadAndWriteFaqExcel {
             }
             //写出Excel
             System.out.println("\t\t开始导出Excel");
-            List<OutDto> outPutList = appendDtoList(outList,inList.size());
+            List<OutDto> outPutList = appendDtoList(outList,inList.size(),missTalk);
             Integer insertNum = insertDtoList(outPutList, outFileName);
             outList.clear();
             inList.clear();
@@ -280,7 +294,7 @@ public class ReadAndWriteFaqExcel {
      * @param dtoList
      * @return
      */
-    public  List<OutDto> appendDtoList(List<OutDto> dtoList, Integer insize){
+    public  List<OutDto> appendDtoList(List<OutDto> dtoList, Integer insize, String missTalk){
         ArrayList<OutDto> dtoArrayList = new ArrayList<>();
         Integer missingNum = 0;
         Integer clarifyNum = 0;
@@ -288,7 +302,7 @@ public class ReadAndWriteFaqExcel {
         Integer normalNum = 0;
         for(OutDto perDto:dtoList){
             if("未命中标准问题".equals(perDto.getStandardQuestion())){
-                if("抱歉,小智还在努力学习中。".equals(perDto.getFaqAnswer())){
+                if(missTalk.equals(perDto.getFaqAnswer())){
                     //未命中问题--非召回
                     missingNum ++;
                 }else {
