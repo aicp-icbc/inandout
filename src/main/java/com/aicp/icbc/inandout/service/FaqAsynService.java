@@ -96,10 +96,17 @@ public class FaqAsynService {
                      data = (JSONObject) json.get("data");
                      suggestAnswer = data.getString("suggest_answer");
                 }catch (Exception e){
-                    resp = checkFaqWithExcel.post(cellValue, token, host);
-                    json = JSON.parseObject(resp);
-                    data = (JSONObject) json.get("data");
-                    suggestAnswer = data.getString("suggest_answer");
+                    try {
+                        resp = checkFaqWithExcel.post(cellValue, token, host);
+                        json = JSON.parseObject(resp);
+                        data = (JSONObject) json.get("data");
+                        suggestAnswer = data.getString("suggest_answer");
+                    }catch (Exception e1){
+                        resp = checkFaqWithExcel.post(cellValue, token, host);
+                        json = JSON.parseObject(resp);
+                        data = (JSONObject) json.get("data");
+                        suggestAnswer = data.getString("suggest_answer");
+                        }
                 }
 
                 //回复类型
@@ -189,13 +196,13 @@ public class FaqAsynService {
                 Integer scheduleNum = (new Double(((FaqAsynService.takeSum*1.0) / (FaqAsynService.allSum)) * 100).intValue());
                 Integer j = 0;
                 for (; j < scheduleNum/5; j += 1) {
-                    tu += "￥";
+                    tu += "●";
                 }
 
                 for (; j < 20; j += 1){
-                    tu += "*";
+                    tu += "○";
                 }
-                System.out.print("\r接口访问进度：" + scheduleNum  + "%\t" + tu + "\t" + FaqAsynService.takeSum+ "/" + (FaqAsynService.allSum));
+                System.out.print("\r测试进度：" + scheduleNum  + "%\t" + tu + "  " + FaqAsynService.takeSum+ "/" + (FaqAsynService.allSum));
 //                System.out.print("\t" + Thread.currentThread().getName() + "\t" + Thread.currentThread().getId());
             }catch (Exception e){
                 e.printStackTrace();

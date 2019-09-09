@@ -96,8 +96,19 @@ public class CheckFaqWithExcel {
                 //获取返回值
                 outList.addAll(listFuture.get(j).get());
             }
-            System.out.print("\r接口访问进度：" + 100  + "%\t" + "￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥" + "\t" + FaqAsynService.allSum+ "/" + (FaqAsynService.allSum));
-            System.out.println("\t\t开始导出Excel");
+            System.out.print("\r测试进度：" + 100  + "%\t" + "●●●●●●●●●●●●●●●●●●●●" + "  " + FaqAsynService.allSum+ "/" + (FaqAsynService.allSum));
+            System.out.println("  导出Excel");
+            System.out.println("\n" +
+                    "\t\t○○○○○○○○○╭╭╮╮╮|||╭╭╭╮╮○○○○  \n" +
+                    "\t\t○○○○○○○○○╰╰ ╮╮|||||╭╭ ╯╯○○○○○  \n" +
+                    "\t\t○○○○○○○○○○○○○╰╮╭╯○○○○○○○○  \n" +
+                    "\t\t○○◥█◣◢█◤○○○○○○╮╭○○○○○○○○○  \n" +
+                    "\t\t○○○◥██◤○○○○◢█████◣○○○○○○○  \n" +
+                    "\t\t○○○○◥█◣○○○◢███████◣○○○○○○  \n" +
+                    "\t\t○○○○○██◣○◢███████●█◣○○○○○  \n" +
+                    "\t\t○○○○○█████  I  C  B  C  ███○○○○○  \n" +
+                    "\t\t○○○○○◥██████████████○○○○○  \n" +
+                    "\t\t○ ﹏﹏﹏﹏~◥████████████◤﹏﹏﹏﹏○\n");
             Collections.sort(outList, new Comparator<OutDto>() {
                 @Override
                 public int compare(OutDto o1, OutDto o2) {
