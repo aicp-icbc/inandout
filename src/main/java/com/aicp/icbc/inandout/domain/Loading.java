@@ -21,6 +21,9 @@ public class Loading implements CommandLineRunner {
     @Autowired
     private FaqLibraryDao faqLibraryDao;
 
+    @Autowired
+    private CheckFaqWithExcel checkFaqWithExcel;
+
     @Autowired ReadAndWriteFaqExcel readAndWriteFaqExcel;
 
     @Override
@@ -38,9 +41,11 @@ public class Loading implements CommandLineRunner {
 //            InputTreating.run(args);
 //            System.out.println("完----------------------------------机器人训练导入-----------------------------------成");
 //        }
+
             System.out.println("开----------------------------------FAQ测试-----------------------------------始");
-            readAndWriteFaqExcel.run(args,faqLibraryDao);
-            Thread.sleep(1500);
+//            readAndWriteFaqExcel.run(args,faqLibraryDao);
+            checkFaqWithExcel.run();
             System.out.println("完----------------------------------FAQ测试-----------------------------------成");
+            Thread.sleep(1500);
     }
 }

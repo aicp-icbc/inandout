@@ -16,8 +16,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableCaching  //开启缓存
 @SpringBootApplication
-@EnableAsync
-@EnableScheduling
 @MapperScan("com.aicp.icbc.inandout.dao")
 public class InandoutApplication {
 

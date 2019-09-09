@@ -9,6 +9,12 @@ spring:
     username: root
     password: 123456a?
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 100
+    tomcat:
+      initial-size: 50
+      max-active: 100
+      min-idle: 20
 mybatis:
   configuration:
     map-underscore-to-camel-case: true

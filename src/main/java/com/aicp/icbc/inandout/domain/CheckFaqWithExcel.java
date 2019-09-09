@@ -4,6 +4,7 @@ import com.aicp.icbc.inandout.dao.FaqLibraryDao;
 import com.aicp.icbc.inandout.dto.FaqLibraryDto;
 import com.aicp.icbc.inandout.dto.InDto;
 import com.aicp.icbc.inandout.dto.OutDto;
+import com.aicp.icbc.inandout.service.FaqAsynService;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelReader;
 import com.alibaba.excel.ExcelWriter;
@@ -16,12 +17,22 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.scheduling.annotation.AsyncResult;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 
@@ -32,18 +43,23 @@ import java.util.stream.Collectors;
  * @modified By liuxincheng01
  */
 @Component
-public class ReadAndWriteFaqExcel {
-//    @Autowired
-//    private static FaqLibraryDao faqLibraryDao;
+public class CheckFaqWithExcel {
 
+    @Autowired
+    private FaqAsynService faqAsynService;
 
-    public  void run(String[] args,FaqLibraryDao faqLibraryDao) {
+    @Autowired
+    @Qualifier("faqTaskExecutor")
+    private AsyncTaskExecutor asyncTaskExecutor;
+
+    public  void run() {
         InputStream is;
         try {
             //输入文件路径-数据源
             String inFileName = "FAQ测试数据导入模板.xlsx";
             //获取Excel中的数据
             List<InDto> inList = getAllDtoList(inFileName);
+            FaqAsynService.allSum = inList.size();
             //写出到Excel中的数据
             List<OutDto> outList = new ArrayList<>();
             String outFileName = "FAQ测试结果.xlsx";
@@ -52,126 +68,44 @@ public class ReadAndWriteFaqExcel {
             FileReader fr = new FileReader(tokenFileName);
             BufferedReader buff = new BufferedReader(fr);
             List<String> list = buff.lines().collect(Collectors.toList());
-            String host = list.get(0);
-            String token = list.get(1);
             String missTalk = list.get(2);
+            Integer cycleSize = Integer.valueOf(list.get(3));
+            Integer size = (inList.size() + cycleSize) / cycleSize;
 
+            //接受 返回Future<List<OutDto>>
+            List<Future<List<OutDto>>> listFuture = new ArrayList<>();
 
-            //循环请求
-            for (int row = 0; row < inList.size(); row++) {
-                //读取每一行
-                try {
-                    String cellValue = inList.get(row).getFaqQuestion();
-                    // System.out.println(cellValue);
-                    //对每一行进行请求
-                    String resp = post(cellValue, token, host);
-                    JSONObject json = JSON.parseObject(resp);
-                    JSONObject data = (JSONObject) json.get("data");
-                    String suggestAnswer = data.getString("suggest_answer");
-                    //回复类型
-                    String standardType = "";
-
-                    //判断是否命中了标准问
-                    String standardQuestion = "未命中标准问题";
-                    String standardQuestionId = "";
-                    if(data.containsKey("answer") && data.get("answer") != null){
-                        JSONObject answer = (JSONObject) data.get("answer");
-                        if(answer.containsKey("standardQuestion") && answer.get("standardQuestion") != null){
-                            standardQuestion = (String) answer.get("standardQuestion");
-                            standardQuestionId = (String)answer.get("id");
-                        }
-                    }
-
-                    //根据命中的标准问 生成业务级别
-                    String businessLevel = "";
-                    if("未命中标准问题".equals(standardQuestion)){
-                        businessLevel = "该问题无法匹配到具体业务级别";
-                    }else if(!"".equals(standardQuestionId)){
-                        List<FaqLibraryDto> faqLibraryDtoList = new ArrayList<>();
-                        List<Integer> faqLibIds = new ArrayList<>();
-                        //在faq表中  根据标准问ID获取dir_id
-                        Integer id = faqLibraryDao.selectFaqDirIdByFaqId(standardQuestionId);
-                        faqLibIds.add(id);
-                        //由最下层dir_id 在 faq_library 表中 获取 parent_id，并保存每一层的id直到最顶层
-                        while (faqLibraryDao.selectParentIdById(id) != 0){
-                            id = faqLibraryDao.selectParentIdById(id);
-                            faqLibIds.add(id);
-                        }
-                        //反序list 在 faq_library 表 根据 id 获取 name，并追加至 业务级别字段中
-                        Collections.reverse(faqLibIds);
-                        for (Integer i = 0; i < faqLibIds.size(); i ++){
-                            if(i == 0){
-                                businessLevel += faqLibraryDao.selectNameById(faqLibIds.get(i));
-                            }else {
-                                businessLevel += "|" + faqLibraryDao.selectNameById(faqLibIds.get(i));
-                            }
-                        }
-//                        System.out.println("\n"+faqLibIds + "\t"+ standardQuestion +"\t"+ businessLevel);
-                    }
-
-                    //判断是否匹配到了推荐问题
-                    String sqs = "";
-                    if (data.containsKey("suggest_questions")) {
-                        sqs = " \n推荐问题： ";
-                        JSONArray questions = data.getJSONArray("suggest_questions");
-                        int serial = 0;
-                        if (!questions.isEmpty()) {
-                            for (Object o : questions) {
-                                serial++;
-                                sqs += serial + "："+((JSONObject)o).getString("question")+"；";
-                            }
-                        }
-                    }
-
-                    //判断是否命中--修改suggestAnswer返回值
-                    if ("".equals(suggestAnswer) || suggestAnswer == null) {
-                        JSONObject clarifyQuestions = (JSONObject) data.get("clarify_questions");
-                        JSONObject voice = (JSONObject) clarifyQuestions.get("voice");
-                        String content = voice.getString("content");
-                        suggestAnswer = content;
-                    }
-
-                    //对对象进行赋值
-                    OutDto outDto = new OutDto();
-                    BeanUtils.copyProperties(inList.get(row), outDto);
-                    outDto.setSerialNum(row + 1);
-                    outDto.setStandardQuestion(standardQuestion);
-                    outDto.setBusinessLevel(businessLevel);
-                    outDto.setFaqAnswer(suggestAnswer+sqs);
-                    //设置回复类型
-                    if(!"未命中标准问题".equals(outDto.getStandardQuestion())){
-                        standardType = "标准回复";
-                    }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && missTalk.equals(outDto.getStandardQuestion())){
-                        standardType = "默认回复";
-                    }else {
-                        standardType = "澄清";
-                    }
-
-                    outList.add(outDto);
-
-                    //打印进度条
-                    String tu = "*";
-                    Integer rowNum = row + 1;
-                    Integer scheduleNum = (new Double(((outList.size()*1.0) / (inList.size())) * 100).intValue());
-                    Integer j = 0;
-                    for (; j < scheduleNum/10; j += 1) {
-                        tu += "***";
-                    }
-                    for (; j < 10; j += 1){
-                        tu += "---";
-                    }
-
-                    if(rowNum == inList.size()){
-                        System.out.print("\r接口访问进度：" + 100  + "%\t" + tu + "\t" + inList.size() + "/" + inList.size());
-                    }else {
-                        System.out.print("\r接口访问进度：" + scheduleNum  + "%\t" + tu + "\t" + outList.size() + "/" + inList.size());
-                    }
-                }catch (Exception e){
-                    e.printStackTrace();
+            //循环请求 -- 调用多线程
+            for (Integer i = 0; i < cycleSize; i ++){
+                Integer from = size * i < inList.size() ? size * i : inList.size() - 1;;
+                Integer to = size * (i + 1) < inList.size() ? size * (i + 1) : inList.size();
+//                System.out.println(from +"\t\t"+to);
+                listFuture.add(faqAsynService.getOutDto(inList.subList(from,to)));
+                if(to == inList.size()){
+                    break;
                 }
             }
+            //判断每个线程是否全部终止 并 获取 返回值
+            for (Integer j = 0; j < listFuture.size(); j ++){
+                //判断是否执行完毕
+                while (true){
+                    if(listFuture.get(j).isDone()){
+                        break;
+                    }
+                }
+                //获取返回值
+                outList.addAll(listFuture.get(j).get());
+            }
+            System.out.print("\r接口访问进度：" + 100  + "%\t" + "￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥" + "\t" + FaqAsynService.allSum+ "/" + (FaqAsynService.allSum));
+            System.out.println("\t\t开始导出Excel");
+            Collections.sort(outList, new Comparator<OutDto>() {
+                @Override
+                public int compare(OutDto o1, OutDto o2) {
+                    return o1.getSerialNum().compareTo(o2.getSerialNum());
+                }
+            });
+
             //写出Excel
-            System.out.println("\t开始导出Excel");
             List<OutDto> outPutList = appendDtoList(outList,inList.size(),missTalk);
             Integer insertNum = insertDtoList(outPutList, outFileName);
             outList.clear();
@@ -183,6 +117,9 @@ public class ReadAndWriteFaqExcel {
         catch (Exception e) {
             e.printStackTrace();
         }
+        //关闭线程池
+        ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor)asyncTaskExecutor;
+        executor.shutdown();
     }
 
     public  String post(String queryText,String token,String host){
