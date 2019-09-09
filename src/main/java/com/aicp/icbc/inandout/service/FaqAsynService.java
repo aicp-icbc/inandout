@@ -102,10 +102,17 @@ public class FaqAsynService {
                         data = (JSONObject) json.get("data");
                         suggestAnswer = data.getString("suggest_answer");
                     }catch (Exception e1){
-                        resp = checkFaqWithExcel.post(cellValue, token, host);
-                        json = JSON.parseObject(resp);
-                        data = (JSONObject) json.get("data");
-                        suggestAnswer = data.getString("suggest_answer");
+                        try {
+                            resp = checkFaqWithExcel.post(cellValue, token, host);
+                            json = JSON.parseObject(resp);
+                            data = (JSONObject) json.get("data");
+                            suggestAnswer = data.getString("suggest_answer");
+                        }catch (Exception e2){
+                                resp = checkFaqWithExcel.post(cellValue, token, host);
+                                json = JSON.parseObject(resp);
+                                data = (JSONObject) json.get("data");
+                                suggestAnswer = data.getString("suggest_answer");
+                            }
                         }
                 }
 
@@ -182,7 +189,8 @@ public class FaqAsynService {
                 //设置回复类型
                 if(!"未命中标准问题".equals(outDto.getStandardQuestion())){
                     standardType = "标准回复";
-                }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && missTalk.equals(outDto.getFaqAnswer())){
+//                }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && missTalk.equals(outDto.getFaqAnswer())){
+                }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && "抱歉，小智还在学习中，您的问题我记下来了，您可以换个其他问题试试。".equals(outDto.getFaqAnswer())){
                     standardType = "默认回复";
                 }else {
                     standardType = "澄清";

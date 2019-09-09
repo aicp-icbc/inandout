@@ -117,11 +117,11 @@ public class CheckFaqWithExcel {
             });
 
             //写出Excel
-            List<OutDto> outPutList = appendDtoList(outList,inList.size(),missTalk);
-            Integer insertNum = insertDtoList(outPutList, outFileName);
+//            List<OutDto> outPutList = appendDtoList(outList,inList.size(),missTalk);
+            Integer insertNum = insertDtoList(outList, outFileName);
             outList.clear();
             inList.clear();
-            outPutList.clear();
+//            outPutList.clear();
         }catch (IOException e){
 
         }
