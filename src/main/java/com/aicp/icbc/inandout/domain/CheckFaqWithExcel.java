@@ -12,10 +12,14 @@ import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.read.metadata.ReadSheet;
 import com.alibaba.excel.write.metadata.WriteSheet;
+import com.alibaba.excel.write.metadata.style.WriteCellStyle;
+import com.alibaba.excel.write.metadata.style.WriteFont;
+import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -133,9 +137,10 @@ public class CheckFaqWithExcel {
         executor.shutdown();
     }
 
-    public  String post(String queryText,String token,String host){
+    public  String post(String queryText,String token,String host) throws InterruptedException {
         String url = host + "/api/v1/core/query?version=20170407";
         OkHttpClient client = new OkHttpClient();
+        Thread.sleep(100);
         HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
                 .addQueryParameter("version", "20170407")
                 .build();
@@ -305,10 +310,21 @@ public class CheckFaqWithExcel {
      * @return
      */
     public static Integer insertDtoList(List<OutDto> dtoList, String fileName){
+        /// 头的策略
+        WriteCellStyle headWriteCellStyle = new WriteCellStyle();
+        // 背景设置为红色
+        headWriteCellStyle.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+        WriteFont headWriteFont = new WriteFont();
+        headWriteFont.setFontHeightInPoints((short)12);
+        headWriteCellStyle.setWriteFont(headWriteFont);
+        //只设置表头样式
+        HorizontalCellStyleStrategy horizontalCellStyleStrategy =
+                new HorizontalCellStyleStrategy(headWriteCellStyle,new WriteCellStyle());
+
         //调用easyexcel 写入数据
         ExcelWriter excelWriter = EasyExcel.write(fileName, OutDto.class).build();
         //设值名称
-        WriteSheet writeSheet = EasyExcel.writerSheet("FAQ测试").build();
+        WriteSheet writeSheet = EasyExcel.writerSheet("FAQ测试").registerWriteHandler(horizontalCellStyleStrategy).build();
         //开始写入
         excelWriter.write(dtoList, writeSheet);
         /// 千万别忘记finish 会帮忙关闭流

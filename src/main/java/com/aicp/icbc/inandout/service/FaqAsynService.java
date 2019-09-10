@@ -8,6 +8,7 @@ import com.aicp.icbc.inandout.dto.OutDto;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import okhttp3.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -18,9 +19,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -83,37 +82,79 @@ public class FaqAsynService {
         for (int row = 0; row < inList.size(); row++) {
             //读取每一行
             try {
-                String cellValue = inList.get(row).getFaqQuestion();
+                String excelQuestion = inList.get(row).getFaqQuestion();
                 // System.out.println(cellValue);
                 //对每一行进行请求
-                String resp = checkFaqWithExcel.post(cellValue, token, host);
+                String resp = "";
+                synchronized (this){
+                    resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                }
+//                String url = host + "/api/v1/core/query?version=20170407";
+//                OkHttpClient client = new OkHttpClient();
+//                HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
+//                        .addQueryParameter("version", "20170407")
+//                        .build();
+//                String postJson = "{\"query_text\":\"" + excelQuestion + "\",\"session_id\":\"\"}";
+//
+//                RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), postJson);
+//
+//                Request request = new Request
+//                        .Builder()
+//                        .post(body)
+//                        .url(httpUrl)
+//                        .addHeader("Authorization", "AICP "+ token)
+//                        .build();
+//                Response response = null;
+//                while (true){
+//                    try {
+//                        response = client.newCall(request).execute();
+//                    } catch (Exception e) {
+//                    }
+//                    if (response != null && response.body() != null){
+//                        break;
+//                    }
+//                }
+//                String str = "";
+//                try {
+//                    str = response.body().string();
+//                } catch (Exception e) {
+//                }
+//                String resp = str;
                 JSONObject json = null;
                 JSONObject data = null;
-                String suggestAnswer = null;
+                String suggestAnswer = "";
+                JSONArray confirm_questions = null;
                 //如果报错则重新请求
                 try {
-                     json = JSON.parseObject(resp);
+                     json = JSONObject.parseObject(resp);
                      data = (JSONObject) json.get("data");
-                     suggestAnswer = data.getString("suggest_answer");
+                     if(data.containsKey("suggest_answer")){
+                         suggestAnswer = data.getString("suggest_answer");
+                     }
+                     if(data.containsKey("confirm_questions")){
+                         confirm_questions = data.getJSONArray("confirm_questions");
+                     }
                 }catch (Exception e){
                     try {
-                        resp = checkFaqWithExcel.post(cellValue, token, host);
-                        json = JSON.parseObject(resp);
                         data = (JSONObject) json.get("data");
-                        suggestAnswer = data.getString("suggest_answer");
-                    }catch (Exception e1){
-                        try {
-                            resp = checkFaqWithExcel.post(cellValue, token, host);
-                            json = JSON.parseObject(resp);
-                            data = (JSONObject) json.get("data");
+                        if(data.containsKey("suggest_answer")){
                             suggestAnswer = data.getString("suggest_answer");
-                        }catch (Exception e2){
-                                resp = checkFaqWithExcel.post(cellValue, token, host);
-                                json = JSON.parseObject(resp);
-                                data = (JSONObject) json.get("data");
-                                suggestAnswer = data.getString("suggest_answer");
-                            }
                         }
+                        if(data.containsKey("confirm_questions")){
+                            confirm_questions = data.getJSONArray("confirm_questions");
+                        }
+                    }catch (Exception e1){
+                        json = JSONObject.parseObject(resp +" ----");
+//                        json = JSONObject.parseObject(resp +" ----"+ postJson.toString());
+                        json = JSONObject.parseObject(resp);
+                        data = (JSONObject) json.get("data");
+                        if(data.containsKey("suggest_answer")){
+                            suggestAnswer = data.getString("suggest_answer");
+                        }
+                        if(data.containsKey("confirm_questions")){
+                            confirm_questions = data.getJSONArray("confirm_questions");
+                        }
+                    }
                 }
 
                 //回复类型
@@ -171,31 +212,51 @@ public class FaqAsynService {
                     }
                 }
 
-                //判断是否命中--修改suggestAnswer返回值
-                if ("".equals(suggestAnswer) || suggestAnswer == null) {
-                    JSONObject clarifyQuestions = (JSONObject) data.get("clarify_questions");
-                    JSONObject voice = (JSONObject) clarifyQuestions.get("voice");
-                    String content = voice.getString("content");
-                    suggestAnswer = content;
+                //判断是否为澄清--修改suggestAnswer返回值
+//                if ("".equals(suggestAnswer) || suggestAnswer == null) {
+//                    JSONObject clarifyQuestions = (JSONObject) data.get("clarify_questions");
+//                    JSONObject voice = (JSONObject) clarifyQuestions.get("voice");
+//                    String content = voice.getString("content");
+//                    suggestAnswer = content;
+//                }
+                String confirmQuestion = "";
+                if(confirm_questions != null){
+                    for (int i = 0; i < confirm_questions.size(); i++) {
+                        JSONObject perJson = confirm_questions.getJSONObject(i);
+                        if(i == 0){
+                            confirmQuestion += perJson.getString("question");
+                        }else {
+                            confirmQuestion += "、" + perJson.getString("question");
+                        }
+                    }
                 }
 
                 //对对象进行赋值
                 OutDto outDto = new OutDto();
                 BeanUtils.copyProperties(inList.get(row), outDto);
                 outDto.setSerialNum(inList.get(row).getSerialNum());
-                outDto.setStandardQuestion(standardQuestion);
+                //判断是否命中澄清
+                if(!"".equals(confirmQuestion)){
+                    outDto.setStandardQuestion(confirmQuestion);
+                }else {
+                    outDto.setStandardQuestion(standardQuestion);
+                }
                 outDto.setBusinessLevel(businessLevel);
                 outDto.setFaqAnswer(suggestAnswer+sqs);
                 //设置回复类型
-                if(!"未命中标准问题".equals(outDto.getStandardQuestion())){
+                if(!"未命中标准问题".equals(outDto.getStandardQuestion()) && "".equals(confirmQuestion)){
                     standardType = "标准回复";
 //                }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && missTalk.equals(outDto.getFaqAnswer())){
-                }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && "抱歉，小智还在学习中，您的问题我记下来了，您可以换个其他问题试试。".equals(outDto.getFaqAnswer())){
+                }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && "".equals(confirmQuestion)){
                     standardType = "默认回复";
                 }else {
-                    standardType = "澄清";
+                    standardType = "建议问";
                 }
+                //将建议问的推荐答案
                 outDto.setStandardType(standardType);
+                if("建议问".equals(outDto.getStandardType())){
+                    outDto.setFaqAnswer("");
+                }
                 outList.add(outDto);
                 FaqAsynService.takeSum ++;
                 //打印进度条
@@ -219,4 +280,5 @@ public class FaqAsynService {
         Future<List<OutDto>> future = new AsyncResult<List<OutDto>>(outList);
         return future;
     }
+
 }

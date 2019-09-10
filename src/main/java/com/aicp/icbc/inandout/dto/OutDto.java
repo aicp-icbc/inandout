@@ -1,6 +1,8 @@
 package com.aicp.icbc.inandout.dto;
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.annotation.write.style.ColumnWidth;
+import com.alibaba.excel.annotation.write.style.HeadRowHeight;
 import lombok.Data;
 
 /**
@@ -10,22 +12,30 @@ import lombok.Data;
  * @Version： 1.0
  */
 @Data
+@HeadRowHeight(20)
 public class OutDto{
+
+    @ColumnWidth(6)
     @ExcelProperty(value = "序号" , index = 0)
     private Integer serialNum;
 
-    @ExcelProperty(value = "问题" , index = 1)
+    @ColumnWidth(25)
+    @ExcelProperty(value = "测试问法" , index = 1)
     private String faqQuestion;
 
-    @ExcelProperty(value = "命中标准问" , index = 2)
+    @ColumnWidth(30)
+    @ExcelProperty(value = "触发的标准问题或建议问" , index = 2)
     private String standardQuestion;
 
-    @ExcelProperty(value = "回复类型" , index = 3)
+    @ColumnWidth(15)
+    @ExcelProperty(value = "返回结果类型" , index = 3)
     private String standardType;
 
-    @ExcelProperty(value = "答案" , index = 4)
+    @ColumnWidth(60)
+    @ExcelProperty(value = "返回答案" , index = 4)
     private String faqAnswer;
 
+    @ColumnWidth(60)
     @ExcelProperty(value = "业务分类级别" , index = 5)
     private String businessLevel;
 
