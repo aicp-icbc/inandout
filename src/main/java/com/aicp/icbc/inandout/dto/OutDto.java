@@ -29,5 +29,8 @@ public class OutDto{
     @ExcelProperty(value = "业务分类级别" , index = 5)
     private String businessLevel;
 
+    @ExcelProperty(value = "访问时间" , index = 6)
+    private String time;
+
 
 }

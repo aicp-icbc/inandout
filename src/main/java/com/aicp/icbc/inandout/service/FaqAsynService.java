@@ -10,6 +10,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
@@ -18,9 +19,13 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -131,29 +136,30 @@ public class FaqAsynService {
                 }
 
                 //根据命中的标准问 生成业务级别
-                String businessLevel = "";
+                String businessLevel = "-1";
                 if("未命中标准问题".equals(standardQuestion)){
-                    businessLevel = "该问题无法匹配到具体业务级别";
+                    businessLevel = "-1";
                 }else if(!"".equals(standardQuestionId)){
                     List<FaqLibraryDto> faqLibraryDtoList = new ArrayList<>();
                     List<Integer> faqLibIds = new ArrayList<>();
                     //在faq表中  根据标准问ID获取dir_id
                     Integer id = faqLibraryDao.selectFaqDirIdByFaqId(standardQuestionId);
-                    faqLibIds.add(id);
-                    //由最下层dir_id 在 faq_library 表中 获取 parent_id，并保存每一层的id直到最顶层
-                    while (faqLibraryDao.selectParentIdById(id) != 0){
-                        id = faqLibraryDao.selectParentIdById(id);
-                        faqLibIds.add(id);
-                    }
-                    //反序list 在 faq_library 表 根据 id 获取 name，并追加至 业务级别字段中
-                    Collections.reverse(faqLibIds);
-                    for (Integer i = 0; i < faqLibIds.size(); i ++){
-                        if(i == 0){
-                            businessLevel += faqLibraryDao.selectNameById(faqLibIds.get(i));
-                        }else {
-                            businessLevel += "|" + faqLibraryDao.selectNameById(faqLibIds.get(i));
-                        }
-                    }
+                    businessLevel = id.toString();
+//                    faqLibIds.add(id);
+//                    //由最下层dir_id 在 faq_library 表中 获取 parent_id，并保存每一层的id直到最顶层
+//                    while (faqLibraryDao.selectParentIdById(id) != 0){
+//                        id = faqLibraryDao.selectParentIdById(id);
+//                        faqLibIds.add(id);
+//                    }
+//                    //反序list 在 faq_library 表 根据 id 获取 name，并追加至 业务级别字段中
+//                    Collections.reverse(faqLibIds);
+//                    for (Integer i = 0; i < faqLibIds.size(); i ++){
+//                        if(i == 0){
+//                            businessLevel += faqLibraryDao.selectNameById(faqLibIds.get(i));
+//                        }else {
+//                            businessLevel += "|" + faqLibraryDao.selectNameById(faqLibIds.get(i));
+//                        }
+//                    }
 //                        System.out.println("\n"+faqLibIds + "\t"+ standardQuestion +"\t"+ businessLevel);
                 }
 
@@ -186,6 +192,12 @@ public class FaqAsynService {
                 outDto.setStandardQuestion(standardQuestion);
                 outDto.setBusinessLevel(businessLevel);
                 outDto.setFaqAnswer(suggestAnswer+sqs);
+                //设置随机时间
+                LocalDateTime localDateTime = LocalDateTime.now();
+                Long hour = Long.valueOf(new Random(localDateTime.getSecond()).nextInt() % 4);
+                Long hour1 = Long.valueOf(new Random(localDateTime.getSecond()).nextInt() % 4);
+                localDateTime = localDateTime.plusHours(hour);
+                outDto.setTime(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 //设置回复类型
                 if(!"未命中标准问题".equals(outDto.getStandardQuestion())){
                     standardType = "标准回复";
