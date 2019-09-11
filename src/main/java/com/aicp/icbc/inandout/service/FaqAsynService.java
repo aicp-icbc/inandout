@@ -86,47 +86,14 @@ public class FaqAsynService {
                 // System.out.println(cellValue);
                 //对每一行进行请求
                 String resp = "";
-                synchronized (this){
-                    resp = checkFaqWithExcel.post(excelQuestion, token, host);
-                }
-//                String url = host + "/api/v1/core/query?version=20170407";
-//                OkHttpClient client = new OkHttpClient();
-//                HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
-//                        .addQueryParameter("version", "20170407")
-//                        .build();
-//                String postJson = "{\"query_text\":\"" + excelQuestion + "\",\"session_id\":\"\"}";
-//
-//                RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), postJson);
-//
-//                Request request = new Request
-//                        .Builder()
-//                        .post(body)
-//                        .url(httpUrl)
-//                        .addHeader("Authorization", "AICP "+ token)
-//                        .build();
-//                Response response = null;
-//                while (true){
-//                    try {
-//                        response = client.newCall(request).execute();
-//                    } catch (Exception e) {
-//                    }
-//                    if (response != null && response.body() != null){
-//                        break;
-//                    }
-//                }
-//                String str = "";
-//                try {
-//                    str = response.body().string();
-//                } catch (Exception e) {
-//                }
-//                String resp = str;
                 JSONObject json = null;
                 JSONObject data = null;
                 String suggestAnswer = "";
                 JSONArray confirm_questions = null;
                 //如果报错则重新请求
                 try {
-                     json = JSONObject.parseObject(resp);
+                    resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                    json = JSONObject.parseObject(resp);
                      data = (JSONObject) json.get("data");
                      if(data.containsKey("suggest_answer")){
                          suggestAnswer = data.getString("suggest_answer");
@@ -136,6 +103,7 @@ public class FaqAsynService {
                      }
                 }catch (Exception e){
                     try {
+                        resp = checkFaqWithExcel.post(excelQuestion, token, host);
                         data = (JSONObject) json.get("data");
                         if(data.containsKey("suggest_answer")){
                             suggestAnswer = data.getString("suggest_answer");
@@ -144,15 +112,50 @@ public class FaqAsynService {
                             confirm_questions = data.getJSONArray("confirm_questions");
                         }
                     }catch (Exception e1){
-                        json = JSONObject.parseObject(resp +" ----");
-//                        json = JSONObject.parseObject(resp +" ----"+ postJson.toString());
-                        json = JSONObject.parseObject(resp);
-                        data = (JSONObject) json.get("data");
-                        if(data.containsKey("suggest_answer")){
-                            suggestAnswer = data.getString("suggest_answer");
-                        }
-                        if(data.containsKey("confirm_questions")){
-                            confirm_questions = data.getJSONArray("confirm_questions");
+                        try {
+                            resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                            json = JSONObject.parseObject(resp);
+                            data = (JSONObject) json.get("data");
+                            if(data.containsKey("suggest_answer")){
+                                suggestAnswer = data.getString("suggest_answer");
+                            }
+                            if(data.containsKey("confirm_questions")){
+                                confirm_questions = data.getJSONArray("confirm_questions");
+                            }
+                        }catch (Exception e2){
+                            try {
+                                resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                                json = JSONObject.parseObject(resp);
+                                data = (JSONObject) json.get("data");
+                                if(data.containsKey("suggest_answer")){
+                                    suggestAnswer = data.getString("suggest_answer");
+                                }
+                                if(data.containsKey("confirm_questions")){
+                                    confirm_questions = data.getJSONArray("confirm_questions");
+                                }
+                            }catch (Exception e3){
+                                try {
+                                    resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                                    json = JSONObject.parseObject(resp);
+                                    data = (JSONObject) json.get("data");
+                                    if(data.containsKey("suggest_answer")){
+                                        suggestAnswer = data.getString("suggest_answer");
+                                    }
+                                    if(data.containsKey("confirm_questions")){
+                                        confirm_questions = data.getJSONArray("confirm_questions");
+                                    }
+                                }catch (Exception e4){
+                                    resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                                    json = JSONObject.parseObject(resp);
+                                    data = (JSONObject) json.get("data");
+                                    if(data.containsKey("suggest_answer")){
+                                        suggestAnswer = data.getString("suggest_answer");
+                                    }
+                                    if(data.containsKey("confirm_questions")){
+                                        confirm_questions = data.getJSONArray("confirm_questions");
+                                    }
+                                }
+                            }
                         }
                     }
                 }
