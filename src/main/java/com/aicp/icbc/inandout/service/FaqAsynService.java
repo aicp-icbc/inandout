@@ -14,6 +14,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -89,7 +90,8 @@ public class FaqAsynService {
             //读取每一行
             try {
                 String excelQuestion = inList.get(row).getFaqQuestion();
-                String questAnswer = inList.get(row).getQuestAnswer();
+                String questAnswerBank = inList.get(row).getQuestAnswerBank();
+                String staderQuestionBank = inList.get(row).getStaderQuestionBank();
                 String time = inList.get(row).getTime();
                 String channel = inList.get(row).getChannel();
 
@@ -239,12 +241,22 @@ public class FaqAsynService {
                 outDto.setFaqAnswer(suggestAnswer+sqs);
                 //设置随机时间
 //                LocalDateTime localDateTime = LocalDateTime.now();
-                LocalDateTime localDateTime = LocalDateTime.parse(time,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                outDto.setTime(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                outDto.setHour(String.valueOf(localDateTime.getHour()));
-                outDto.setMin(String.valueOf(localDateTime.getMinute()));
-                outDto.setQuestAnswer(questAnswer);
-                outDto.setChannel(channel);
+                //设置行方给定的结果
+                if(!StringUtils.isEmpty(time)){
+                    LocalDateTime localDateTime = LocalDateTime.parse(time,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    outDto.setTime(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    outDto.setHour(String.valueOf(localDateTime.getHour()));
+                    outDto.setMin(String.valueOf(localDateTime.getMinute()));
+                }
+                if(!StringUtils.isEmpty(questAnswerBank)){
+                    outDto.setQuestAnswerBank(questAnswerBank);
+                }
+                if (!StringUtils.isEmpty(staderQuestionBank)){
+                    outDto.setStaderQuestionBank(staderQuestionBank);
+                }
+                if(!StringUtils.isEmpty(channel)){
+                    outDto.setChannel(channel);
+                }
                 //设置回复类型
                 if(!"未命中标准问题".equals(outDto.getStandardQuestion()) && "".equals(confirmQuestion)){
                     standardType = "标准回复";
