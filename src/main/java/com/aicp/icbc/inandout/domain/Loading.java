@@ -42,10 +42,10 @@ public class Loading implements CommandLineRunner {
 //            System.out.println("完----------------------------------机器人训练导入-----------------------------------成");
 //        }
 
-            System.out.println("开----------------------------------FAQ测试-----------------------------------始");
+            System.out.println("开----------------------------------BI数据整理-----------------------------------始");
 //            readAndWriteFaqExcel.run(args,faqLibraryDao);
             checkFaqWithExcel.run();
-            System.out.println("完----------------------------------FAQ测试-----------------------------------成");
+            System.out.println("完----------------------------------BI数据整理-----------------------------------成");
             Thread.sleep(1500);
     }
 }

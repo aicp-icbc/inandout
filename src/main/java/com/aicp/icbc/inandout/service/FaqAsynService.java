@@ -88,37 +88,86 @@ public class FaqAsynService {
         for (int row = 0; row < inList.size(); row++) {
             //读取每一行
             try {
-                String cellValue = inList.get(row).getFaqQuestion();
+                String excelQuestion = inList.get(row).getFaqQuestion();
+                String questAnswer = inList.get(row).getQuestAnswer();
+                String time = inList.get(row).getTime();
+                String channel = inList.get(row).getChannel();
+
                 // System.out.println(cellValue);
                 //对每一行进行请求
-                String resp = checkFaqWithExcel.post(cellValue, token, host);
+                String resp = "";
                 JSONObject json = null;
                 JSONObject data = null;
-                String suggestAnswer = null;
+                String suggestAnswer = "";
+                JSONArray confirm_questions = null;
                 //如果报错则重新请求
                 try {
-                     json = JSON.parseObject(resp);
-                     data = (JSONObject) json.get("data");
-                     suggestAnswer = data.getString("suggest_answer");
+                    resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                    json = JSONObject.parseObject(resp);
+                    data = (JSONObject) json.get("data");
+                    if(data.containsKey("suggest_answer")){
+                        suggestAnswer = data.getString("suggest_answer");
+                    }
+                    if(data.containsKey("confirm_questions")){
+                        confirm_questions = data.getJSONArray("confirm_questions");
+                    }
                 }catch (Exception e){
                     try {
-                        resp = checkFaqWithExcel.post(cellValue, token, host);
-                        json = JSON.parseObject(resp);
+                        resp = checkFaqWithExcel.post(excelQuestion, token, host);
                         data = (JSONObject) json.get("data");
-                        suggestAnswer = data.getString("suggest_answer");
+                        if(data.containsKey("suggest_answer")){
+                            suggestAnswer = data.getString("suggest_answer");
+                        }
+                        if(data.containsKey("confirm_questions")){
+                            confirm_questions = data.getJSONArray("confirm_questions");
+                        }
                     }catch (Exception e1){
                         try {
-                            resp = checkFaqWithExcel.post(cellValue, token, host);
-                            json = JSON.parseObject(resp);
+                            resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                            json = JSONObject.parseObject(resp);
                             data = (JSONObject) json.get("data");
-                            suggestAnswer = data.getString("suggest_answer");
-                        }catch (Exception e2){
-                                resp = checkFaqWithExcel.post(cellValue, token, host);
-                                json = JSON.parseObject(resp);
-                                data = (JSONObject) json.get("data");
+                            if(data.containsKey("suggest_answer")){
                                 suggestAnswer = data.getString("suggest_answer");
                             }
+                            if(data.containsKey("confirm_questions")){
+                                confirm_questions = data.getJSONArray("confirm_questions");
+                            }
+                        }catch (Exception e2){
+                            try {
+                                resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                                json = JSONObject.parseObject(resp);
+                                data = (JSONObject) json.get("data");
+                                if(data.containsKey("suggest_answer")){
+                                    suggestAnswer = data.getString("suggest_answer");
+                                }
+                                if(data.containsKey("confirm_questions")){
+                                    confirm_questions = data.getJSONArray("confirm_questions");
+                                }
+                            }catch (Exception e3){
+                                try {
+                                    resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                                    json = JSONObject.parseObject(resp);
+                                    data = (JSONObject) json.get("data");
+                                    if(data.containsKey("suggest_answer")){
+                                        suggestAnswer = data.getString("suggest_answer");
+                                    }
+                                    if(data.containsKey("confirm_questions")){
+                                        confirm_questions = data.getJSONArray("confirm_questions");
+                                    }
+                                }catch (Exception e4){
+                                    resp = checkFaqWithExcel.post(excelQuestion, token, host);
+                                    json = JSONObject.parseObject(resp);
+                                    data = (JSONObject) json.get("data");
+                                    if(data.containsKey("suggest_answer")){
+                                        suggestAnswer = data.getString("suggest_answer");
+                                    }
+                                    if(data.containsKey("confirm_questions")){
+                                        confirm_questions = data.getJSONArray("confirm_questions");
+                                    }
+                                }
+                            }
                         }
+                    }
                 }
 
                 //回复类型
@@ -145,22 +194,6 @@ public class FaqAsynService {
                     //在faq表中  根据标准问ID获取dir_id
                     Integer id = faqLibraryDao.selectFaqDirIdByFaqId(standardQuestionId);
                     businessLevel = id.toString();
-//                    faqLibIds.add(id);
-//                    //由最下层dir_id 在 faq_library 表中 获取 parent_id，并保存每一层的id直到最顶层
-//                    while (faqLibraryDao.selectParentIdById(id) != 0){
-//                        id = faqLibraryDao.selectParentIdById(id);
-//                        faqLibIds.add(id);
-//                    }
-//                    //反序list 在 faq_library 表 根据 id 获取 name，并追加至 业务级别字段中
-//                    Collections.reverse(faqLibIds);
-//                    for (Integer i = 0; i < faqLibIds.size(); i ++){
-//                        if(i == 0){
-//                            businessLevel += faqLibraryDao.selectNameById(faqLibIds.get(i));
-//                        }else {
-//                            businessLevel += "|" + faqLibraryDao.selectNameById(faqLibIds.get(i));
-//                        }
-//                    }
-//                        System.out.println("\n"+faqLibIds + "\t"+ standardQuestion +"\t"+ businessLevel);
                 }
 
                 //判断是否匹配到了推荐问题
@@ -173,6 +206,18 @@ public class FaqAsynService {
                         for (Object o : questions) {
                             serial++;
                             sqs += serial + "："+((JSONObject)o).getString("question")+"；";
+                        }
+                    }
+                }
+                //判断是否为澄清--修改suggestAnswer返回值
+                String confirmQuestion = "";
+                if(confirm_questions != null){
+                    for (int i = 0; i < confirm_questions.size(); i++) {
+                        JSONObject perJson = confirm_questions.getJSONObject(i);
+                        if(i == 0){
+                            confirmQuestion += perJson.getString("question");
+                        }else {
+                            confirmQuestion += "、" + perJson.getString("question");
                         }
                     }
                 }
@@ -193,19 +238,21 @@ public class FaqAsynService {
                 outDto.setBusinessLevel(businessLevel);
                 outDto.setFaqAnswer(suggestAnswer+sqs);
                 //设置随机时间
-                LocalDateTime localDateTime = LocalDateTime.now();
-                Long hour = Long.valueOf(new Random(localDateTime.getSecond()).nextInt() % 4);
-                Long hour1 = Long.valueOf(new Random(localDateTime.getSecond()).nextInt() % 4);
-                localDateTime = localDateTime.plusHours(hour);
+//                LocalDateTime localDateTime = LocalDateTime.now();
+                LocalDateTime localDateTime = LocalDateTime.parse(time,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                 outDto.setTime(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                outDto.setHour(String.valueOf(localDateTime.getHour()));
+                outDto.setMin(String.valueOf(localDateTime.getMinute()));
+                outDto.setQuestAnswer(questAnswer);
+                outDto.setChannel(channel);
                 //设置回复类型
-                if(!"未命中标准问题".equals(outDto.getStandardQuestion())){
+                if(!"未命中标准问题".equals(outDto.getStandardQuestion()) && "".equals(confirmQuestion)){
                     standardType = "标准回复";
 //                }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && missTalk.equals(outDto.getFaqAnswer())){
-                }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && "抱歉，小智还在学习中，您的问题我记下来了，您可以换个其他问题试试。".equals(outDto.getFaqAnswer())){
+                }else if("未命中标准问题".equals(outDto.getStandardQuestion()) && "".equals(confirmQuestion)){
                     standardType = "默认回复";
                 }else {
-                    standardType = "澄清";
+                    standardType = "建议问";
                 }
                 outDto.setStandardType(standardType);
                 outList.add(outDto);
@@ -222,7 +269,7 @@ public class FaqAsynService {
                 for (; j < 20; j += 1){
                     tu += "○";
                 }
-                System.out.print("\r测试进度：" + scheduleNum  + "%\t" + tu + "  " + FaqAsynService.takeSum+ "/" + (FaqAsynService.allSum));
+                System.out.print("\r整理进度：" + scheduleNum  + "%\t" + tu + "  " + FaqAsynService.takeSum+ "/" + (FaqAsynService.allSum));
 //                System.out.print("\t" + Thread.currentThread().getName() + "\t" + Thread.currentThread().getId());
             }catch (Exception e){
                 e.printStackTrace();

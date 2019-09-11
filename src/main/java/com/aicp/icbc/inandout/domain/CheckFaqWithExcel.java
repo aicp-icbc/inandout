@@ -12,10 +12,14 @@ import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.read.metadata.ReadSheet;
 import com.alibaba.excel.write.metadata.WriteSheet;
+import com.alibaba.excel.write.metadata.style.WriteCellStyle;
+import com.alibaba.excel.write.metadata.style.WriteFont;
+import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -56,13 +60,13 @@ public class CheckFaqWithExcel {
         InputStream is;
         try {
             //输入文件路径-数据源
-            String inFileName = "FAQ测试数据导入模板.xlsx";
+            String inFileName = "BI数据导入模板.xlsx";
             //获取Excel中的数据
             List<InDto> inList = getAllDtoList(inFileName);
             FaqAsynService.allSum = inList.size();
             //写出到Excel中的数据
             List<OutDto> outList = new ArrayList<>();
-            String outFileName = "FAQ测试结果.xlsx";
+            String outFileName = "BI数据导出结果.xlsx";
             //获取token
             String tokenFileName = "faqtoken.txt";
             FileReader fr = new FileReader(tokenFileName);
@@ -96,7 +100,7 @@ public class CheckFaqWithExcel {
                 //获取返回值
                 outList.addAll(listFuture.get(j).get());
             }
-            System.out.print("\r测试进度：" + 100  + "%\t" + "●●●●●●●●●●●●●●●●●●●●" + "  " + FaqAsynService.allSum+ "/" + (FaqAsynService.allSum));
+            System.out.print("\r整理进度：" + 100  + "%\t" + "●●●●●●●●●●●●●●●●●●●●" + "  " + FaqAsynService.allSum+ "/" + (FaqAsynService.allSum));
             System.out.println("  导出Excel");
             System.out.println("\n" +
                     "\t\t○○○○○○○○○╭╭╮╮╮|||╭╭╭╮╮○○○○  \n" +
@@ -305,10 +309,21 @@ public class CheckFaqWithExcel {
      * @return
      */
     public static Integer insertDtoList(List<OutDto> dtoList, String fileName){
+        /// 头的策略
+        WriteCellStyle headWriteCellStyle = new WriteCellStyle();
+        // 背景设置为红色
+        headWriteCellStyle.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+        WriteFont headWriteFont = new WriteFont();
+        headWriteFont.setFontHeightInPoints((short)12);
+        headWriteCellStyle.setWriteFont(headWriteFont);
+        //只设置表头样式
+        HorizontalCellStyleStrategy horizontalCellStyleStrategy =
+                new HorizontalCellStyleStrategy(headWriteCellStyle,new WriteCellStyle());
+
         //调用easyexcel 写入数据
         ExcelWriter excelWriter = EasyExcel.write(fileName, OutDto.class).build();
         //设值名称
-        WriteSheet writeSheet = EasyExcel.writerSheet("FAQ测试").build();
+        WriteSheet writeSheet = EasyExcel.writerSheet("FAQ测试").registerWriteHandler(horizontalCellStyleStrategy).build();
         //开始写入
         excelWriter.write(dtoList, writeSheet);
         /// 千万别忘记finish 会帮忙关闭流

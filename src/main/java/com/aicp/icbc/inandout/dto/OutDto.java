@@ -32,5 +32,19 @@ public class OutDto{
     @ExcelProperty(value = "访问时间" , index = 6)
     private String time;
 
+    @ExcelProperty(value = "时" , index = 7)
+    private String hour;
+
+    @ExcelProperty(value = "分" , index = 8)
+    private String min;
+
+    @ExcelProperty(value = "问题答案" , index = 9)
+    private String questAnswer;
+
+    @ExcelProperty(value = "渠道" , index = 10)
+    private String channel;
+
+
+
 
 }
