@@ -38,13 +38,16 @@ public class OutDto{
     @ExcelProperty(value = "分" , index = 8)
     private String min;
 
-    @ExcelProperty(value = "标准问题" , index = 9)
+    @ExcelProperty(value = "时段" , index = 9)
+    private String timeSlot;
+
+    @ExcelProperty(value = "标准问题" , index = 10)
     private String staderQuestionBank;
 
-    @ExcelProperty(value = "问题答案" , index = 10)
+    @ExcelProperty(value = "问题答案" , index = 11)
     private String questAnswerBank;
 
-    @ExcelProperty(value = "来源渠道" , index = 11)
+    @ExcelProperty(value = "来源渠道" , index = 12)
     private String channel;
 
 

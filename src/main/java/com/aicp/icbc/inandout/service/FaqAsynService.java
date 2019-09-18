@@ -195,7 +195,11 @@ public class FaqAsynService {
                     List<Integer> faqLibIds = new ArrayList<>();
                     //在faq表中  根据标准问ID获取dir_id
                     Integer id = faqLibraryDao.selectFaqDirIdByFaqId(standardQuestionId);
-                    businessLevel = id.toString();
+                    if(id != null){
+                        businessLevel = id.toString();
+                    }else {
+                        businessLevel = "-1";
+                    }
                 }
 
                 //判断是否匹配到了推荐问题
@@ -242,11 +246,21 @@ public class FaqAsynService {
                 //设置随机时间
 //                LocalDateTime localDateTime = LocalDateTime.now();
                 //设置行方给定的结果
-                if(!StringUtils.isEmpty(time)){
-                    LocalDateTime localDateTime = LocalDateTime.parse(time,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                    outDto.setTime(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                    outDto.setHour(String.valueOf(localDateTime.getHour()));
-                    outDto.setMin(String.valueOf(localDateTime.getMinute()));
+                try {
+                    if(!StringUtils.isEmpty(time)){
+                        LocalDateTime localDateTime = LocalDateTime.parse(time,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        outDto.setTime(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                        outDto.setHour(String.valueOf(localDateTime.getHour()));
+                        outDto.setMin(String.valueOf(localDateTime.getMinute()));
+                        outDto.setTimeSlot(localDateTime.getHour() + ":00--" + localDateTime.getHour() + ":59");
+                    }
+                }catch (Exception e){
+                    if(!StringUtils.isEmpty(time)){
+                        outDto.setTime(time);
+                        outDto.setHour("-1");
+                        outDto.setMin("-1");
+                        outDto.setTimeSlot("-1");
+                    }
                 }
                 if(!StringUtils.isEmpty(questAnswerBank)){
                     outDto.setQuestAnswerBank(questAnswerBank);
